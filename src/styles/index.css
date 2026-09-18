@@ -20,6 +20,7 @@ body {
   min-height: 100%;
 }
 
+/* ---------- Cute Login Character Stage & Styling ---------- */
 .cast-stage::before {
   content: "";
   position: absolute;
@@ -29,8 +30,17 @@ body {
 }
 
 .char {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   animation: floaty 3.2s ease-in-out infinite;
+  transition: transform 0.12s ease-out;
   will-change: transform;
+}
+.char .body {
+  position: relative;
+  transition: filter 0.15s ease;
 }
 .char.shake {
   animation: floaty 3.2s ease-in-out infinite, shakeMove 0.45s ease;
@@ -40,43 +50,41 @@ body {
 }
 
 @keyframes floaty {
-  0%,
-  100% {
-    margin-bottom: 0px;
-  }
-  50% {
-    margin-bottom: 16px;
-  }
+  0%, 100% { margin-bottom: 0px; }
+  50% { margin-bottom: 16px; }
 }
 @keyframes shakeMove {
-  0%,
-  100% {
-    margin-left: 0;
-  }
-  20% {
-    margin-left: -10px;
-  }
-  40% {
-    margin-left: 10px;
-  }
-  60% {
-    margin-left: -8px;
-  }
-  80% {
-    margin-left: 8px;
-  }
+  0%, 100% { margin-left: 0; }
+  20% { margin-left: -10px; }
+  40% { margin-left: 10px; }
+  60% { margin-left: -8px; }
+  80% { margin-left: 8px; }
 }
 @keyframes nodMove {
-  0%,
-  100% {
-    margin-top: 0;
-  }
-  30% {
-    margin-top: 14px;
-  }
-  60% {
-    margin-top: -6px;
-  }
+  0%, 100% { margin-top: 0; }
+  30% { margin-top: 14px; }
+  60% { margin-top: -6px; }
+}
+
+.body-purple {
+  width: 120px; height: 210px;
+  background: linear-gradient(160deg, #9d6bfa, #7c4de0);
+  border-radius: 34px;
+}
+.body-pink {
+  width: 88px; height: 150px;
+  background: linear-gradient(160deg, #f472b6, #db2777);
+  border-radius: 30px;
+}
+.body-yellow {
+  width: 96px; height: 118px;
+  background: linear-gradient(160deg, #fde047, #eab308);
+  border-radius: 26px;
+}
+.body-orange {
+  width: 170px; height: 100px;
+  background: linear-gradient(160deg, #fb923c, #ea580c);
+  border-radius: 100px 100px 24px 24px;
 }
 
 .btn-spinner {

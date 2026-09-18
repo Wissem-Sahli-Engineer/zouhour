@@ -1,10 +1,10 @@
 import { useEffect, useRef } from "react";
 
 const CHARACTERS = [
-  { id: "orange", delay: "1.1s", z: 4, mx: "-18px", body: "w-[170px] h-[100px] rounded-[100px_100px_24px_24px] bg-gradient-to-br from-[#fb923c] to-[#ea580c]", eyesTop: "46%", gap: "22px", mouthTop: "62%", mouthW: "26px" },
-  { id: "purple", delay: "0s", z: 3, mx: "-14px", body: "w-[120px] h-[210px] rounded-[34px] bg-gradient-to-br from-[#9d6bfa] to-[#7c4de0]", eyesTop: "34%", gap: "14px", mouthTop: "52%", mouthW: "20px" },
-  { id: "pink", delay: "0.4s", z: 2, mx: "-14px", body: "w-[88px] h-[150px] rounded-[30px] bg-gradient-to-br from-[#f472b6] to-[#db2777]", eyesTop: "34%", gap: "14px", mouthTop: "48%", mouthW: "16px" },
-  { id: "yellow", delay: "0.8s", z: 1, mx: "-14px", body: "w-[96px] h-[118px] rounded-[26px] bg-gradient-to-br from-[#fde047] to-[#eab308]", eyesTop: "32%", gap: "14px", mouthTop: "50%", mouthW: "22px" },
+  { id: "orange", delay: "1.1s", z: 4, mx: "-18px", body: "body-orange", eyesTop: "46%", gap: "22px", mouthTop: "62%", mouthW: "26px" },
+  { id: "purple", delay: "0s", z: 3, mx: "-14px", body: "body-purple", eyesTop: "34%", gap: "14px", mouthTop: "52%", mouthW: "20px" },
+  { id: "pink", delay: "0.4s", z: 2, mx: "-14px", body: "body-pink", eyesTop: "34%", gap: "14px", mouthTop: "48%", mouthW: "16px" },
+  { id: "yellow", delay: "0.8s", z: 1, mx: "-14px", body: "body-yellow", eyesTop: "32%", gap: "14px", mouthTop: "50%", mouthW: "22px" },
 ];
 
 export function Cast({ reaction }) {

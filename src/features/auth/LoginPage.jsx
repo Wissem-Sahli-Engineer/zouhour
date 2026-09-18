@@ -18,8 +18,6 @@ export function LoginPage() {
   const signupEmail = useAuth((s) => s.signupEmail);
   const clearSignupPending = useAuth((s) => s.clearSignupPending);
 
-  if (token) return <Navigate to="/" replace />;
-
   const [mode, setMode] = useState("login");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -53,6 +51,9 @@ export function LoginPage() {
     },
     { scope: panelRef, dependencies: [mode, signupPending] }
   );
+
+  // Early return AFTER all hooks to satisfy React's rules of hooks
+  if (token) return <Navigate to="/" replace />;
 
   const onChange = (key) => (e) => {
     const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
@@ -99,15 +100,15 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-full items-center justify-center bg-canvas p-5">
-      <div className="flex h-[560px] max-h-[90vh] w-[920px] max-w-[94vw] overflow-hidden rounded-card bg-white shadow-login max-md:h-auto max-md:flex-col">
+    <div className="flex min-h-screen items-center justify-center bg-[#e9e9ec] p-5">
+      <div className="flex h-[560px] max-h-[90vh] w-[920px] max-w-[94vw] overflow-hidden rounded-[24px] bg-white shadow-[0_30px_60px_-20px_rgba(0,0,0,0.25)] max-md:h-auto max-md:flex-col">
         <div className="max-md:h-[200px] max-md:w-full md:flex-1">
           <Cast reaction={reaction} />
         </div>
 
         <div
           ref={panelRef}
-          className="flex w-[360px] shrink-0 flex-col items-center overflow-y-auto px-10 py-11.5 text-center max-md:w-full max-md:px-6 max-md:py-[30px]"
+          className="flex w-[360px] shrink-0 flex-col items-center overflow-y-auto px-10 py-[45px] text-center max-md:w-full max-md:px-6 max-md:py-[30px]"
         >
           {signupPending ? (
             <div className="w-full text-left" data-enter>
@@ -117,6 +118,7 @@ export function LoginPage() {
                 We emailed an admin about <span className="font-semibold text-ink">{signupEmail}</span>. You’ll get access after approval — no account is created yet.
               </p>
               <Button
+                variant="brand"
                 onClick={() => {
                   clearSignupPending();
                   setMode("login");
@@ -211,7 +213,7 @@ export function LoginPage() {
                     <label className="flex items-center gap-[7px] text-muted">
                       <input
                         type="checkbox"
-                        className="h[14px] h-3.5 w-3.5 accent-brand"
+                        className="h-3.5 w-3.5 accent-brand"
                         checked={form.remember}
                         onChange={onChange("remember")}
                       />
@@ -231,7 +233,7 @@ export function LoginPage() {
                 )}
 
                 <div data-enter>
-                  <Button type="submit" loading={loading}>
+                  <Button type="submit" variant="brand" loading={loading}>
                     {mode === "signup" ? "Request access" : "Sign in"}
                   </Button>
                 </div>
