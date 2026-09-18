@@ -1,0 +1,4 @@
+kill -9 $(lsof -t -i:8001) : kill the port
+uvicorn backend:app --host 0.0.0.0 --port 8001 --reload : restart the server 
+curl http://localhost:11434/ :  verying ollama working 
+ollama serve : start the ollama server 
