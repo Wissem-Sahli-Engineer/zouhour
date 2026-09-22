@@ -57,7 +57,41 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Download the Vision AI Model
+### 3. Set Up the PostgreSQL Database
+Clients are stored in PostgreSQL (18, installed at `/Library/PostgreSQL/18`). Create an app role and database once, as the `postgres` admin:
+
+```bash
+/Library/PostgreSQL/18/bin/psql -U postgres -h localhost \
+  -c "CREATE ROLE zouhour LOGIN PASSWORD 'your_app_password';" \
+  -c "CREATE DATABASE zouhour OWNER zouhour;"
+```
+
+Copy `.env.example` to `.env` and put the app password in `DATABASE_URL` (no quotes). Then create the tables:
+
+```bash
+.venv/bin/alembic upgrade head
+```
+
+Optional, one time: import the old `clients.json` (duplicates are skipped, safe to re-run):
+
+```bash
+.venv/bin/python -m backend.import_clients_json
+```
+
+Passport photos are saved as files in `uploads/clients/` (git-ignored); the database stores only their path. Back up both:
+
+```bash
+/Library/PostgreSQL/18/bin/pg_dump -U zouhour -h localhost zouhour > backup.sql
+```
+
+After changing `backend/models.py`, create and apply a migration:
+
+```bash
+.venv/bin/alembic revision --autogenerate -m "describe the change"
+.venv/bin/alembic upgrade head
+```
+
+### 4. Download the Vision AI Model
 Download the Qwen2.5-VL model required for passport extraction:
 
 ```bash

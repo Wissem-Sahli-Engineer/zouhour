@@ -1,11 +1,19 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import Depends, FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from sqlalchemy.exc import IntegrityError
+from sqlmodel import Session, select
 
 import base64
 import json
+import os
 import re
 import requests
 import traceback
+
+from backend.db import get_session
+from backend.models import Client, ClientCreate
+from backend.photos import UPLOADS_DIR, delete_photo, save_client_photo
 
 app = FastAPI()
 
@@ -34,63 +42,69 @@ FIELDS = [
     "issued_by"
 ]
 
-CLIENTS_FILE = "clients.json"
+# Path the browser uses to reach this API (Vite proxies /api -> :8001 and strips the prefix)
+PUBLIC_API_PREFIX = os.getenv("PUBLIC_API_PREFIX", "/api")
 
-def load_clients():
-    import os
-    if not os.path.exists(CLIENTS_FILE):
-        initial = [
-            {
-                "id": 1,
-                "given_name": "Mohamed Aziz",
-                "surname": "Malki",
-                "passport_number": "Y126578",
-                "country": "Tunisia",
-                "nationality": "Tunisian",
-                "type": "P",
-                "date_of_birth": "2002-04-06",
-                "sex": "M",
-                "place_of_birth": "Tunis",
-                "date_of_issue": "2020-05-02",
-                "date_of_expiry": "2025-05-03",
-                "issued_by": "Tunis",
-                "user_photo": "",
-                "created_at": "2026-09-17 22:00"
-            }
-        ]
-        with open(CLIENTS_FILE, "w", encoding="utf-8") as f:
-            json.dump(initial, f, indent=2)
-        return initial
-    try:
-        with open(CLIENTS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return []
 
-def save_clients(clients):
-    with open(CLIENTS_FILE, "w", encoding="utf-8") as f:
-        json.dump(clients, f, indent=2)
+def client_out(client: Client) -> dict:
+    data = client.model_dump(exclude={"photo_path"})
+    data["user_photo"] = (
+        f"{PUBLIC_API_PREFIX}/clients/{client.id}/photo" if client.photo_path else ""
+    )
+    return data
+
 
 @app.get("/clients")
-async def get_clients():
-    return load_clients()
+def get_clients(session: Session = Depends(get_session)):
+    clients = session.exec(select(Client).order_by(Client.id)).all()
+    return [client_out(c) for c in clients]
 
-@app.post("/clients")
-async def add_client(data: dict):
-    clients = load_clients()
-    new_id = max([c.get("id", 0) for c in clients], default=0) + 1
-    data["id"] = new_id
-    import datetime
-    data["created_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-    clients.append(data)
-    save_clients(clients)
-    return {"status": "success", "client": data}
+
+@app.get("/clients/{client_id}/photo")
+def get_client_photo(client_id: int, session: Session = Depends(get_session)):
+    client = session.get(Client, client_id)
+    if not client or not client.photo_path:
+        raise HTTPException(status_code=404, detail="Photo not found")
+    path = UPLOADS_DIR / client.photo_path
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Photo not found")
+    return FileResponse(path, media_type="image/jpeg")
+
+
+@app.post("/clients", status_code=201)
+def add_client(data: ClientCreate, session: Session = Depends(get_session)):
+    client = Client.model_validate(data.model_dump(exclude={"user_photo"}))
+    session.add(client)
+    photo_path = None
+    try:
+        session.flush()  # assigns client.id
+        if data.user_photo:
+            photo_path = save_client_photo(client.id, data.user_photo)
+            client.photo_path = photo_path
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        delete_photo(photo_path)
+        raise HTTPException(
+            status_code=409,
+            detail=f"A client with passport number {data.passport_number} already exists",
+        )
+    except ValueError as e:
+        session.rollback()
+        raise HTTPException(status_code=422, detail=str(e))
+    session.refresh(client)
+    return {"status": "success", "client": client_out(client)}
+
 
 @app.delete("/clients/{client_id}")
-async def delete_client(client_id: int):
-    clients = load_clients()
-    clients = [c for c in clients if c.get("id") != client_id]
-    save_clients(clients)
+def delete_client(client_id: int, session: Session = Depends(get_session)):
+    client = session.get(Client, client_id)
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    photo_path = client.photo_path
+    session.delete(client)
+    session.commit()
+    delete_photo(photo_path)
     return {"status": "success"}
 
 @app.post("/signup-request")
@@ -319,5 +333,5 @@ Dates must use YYYY-MM-DD format.
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("backend:app", host="0.0.0.0", port=8001, reload=True)
+    uvicorn.run("backend.backend:app", host="0.0.0.0", port=8001, reload=True)  # run from the project root
 
