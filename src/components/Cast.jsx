@@ -36,7 +36,7 @@ export function Cast({ reaction }) {
             className={`char ${reaction || ""}`}
             style={{ margin: `0 ${c.mx}`, zIndex: c.z, animationDelay: c.delay }}
           >
-            <div className={`relative ${c.body}`} />
+            <div className={c.body} />
             <div className="eyes" style={{ top: c.eyesTop, gap: c.gap }}>
               <div className="eye">
                 <div className="pupil" />

@@ -23,12 +23,19 @@ export const useAuth = create((set, get) => ({
 
   isAuthed: () => Boolean(get().token),
 
-  login: ({ email, remember }) => {
-    const user = {
-      name: email.split("@")[0].replace(/\./g, " "),
-      email,
-      role: "Agent",
-    };
+  login: async ({ email, password, remember }) => {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || "Invalid email or password");
+    }
+
+    const user = data.user;
     const token = remember ? `persist.${Date.now()}` : `session.${Date.now()}`;
     const payload = { user, token, remember };
     sessionStorage.removeItem(SESSION_KEY);
@@ -36,19 +43,34 @@ export const useAuth = create((set, get) => ({
     if (remember) localStorage.setItem(PERSIST_KEY, JSON.stringify(payload));
     else sessionStorage.setItem(SESSION_KEY, JSON.stringify(payload));
     set({ user, token, remember, signupPending: false });
+    return user;
+  },
+
+  signup: async ({ name, email, password, role, remember }) => {
+    const res = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password, role }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || "Could not register account");
+    }
+
+    const user = data.user;
+    const token = remember ? `persist.${Date.now()}` : `session.${Date.now()}`;
+    const payload = { user, token, remember: Boolean(remember) };
+    sessionStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(PERSIST_KEY);
+    if (remember) localStorage.setItem(PERSIST_KEY, JSON.stringify(payload));
+    else sessionStorage.setItem(SESSION_KEY, JSON.stringify(payload));
+    set({ user, token, remember: Boolean(remember), signupPending: false });
+    return user;
   },
 
   requestSignup: async (form) => {
-    try {
-      await fetch("/api/signup-request", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-    } catch {
-      /* stub — backend email-to-admin is not wired yet */
-    }
-    set({ signupPending: true, signupEmail: form.email });
+    return get().signup(form);
   },
 
   clearSignupPending: () => set({ signupPending: false, signupEmail: "" }),

@@ -85,12 +85,24 @@ export function AppShell() {
 
   return (
     <div className="app-shell">
-      <aside ref={sidebarRef} className="app-sidebar">
+      <aside
+        ref={sidebarRef}
+        className={`app-sidebar ${sidebarOpen ? "" : "collapsed"}`}
+      >
         <div className="sidebar-header">
-          <LogoMark size={28} />
-          <span data-label className="sidebar-brand-text">
-            TCA
-          </span>
+          <img
+            src="./logo.png"
+            alt="Logo"
+            className="sidebar-logo"
+          />
+          <div data-label className="sidebar-header-text">
+            <span className="sidebar-brand-text">
+              TCA
+            </span>
+            <span style={{ whiteSpace: "nowrap", color: "var(--color-text-muted)", fontSize: "10px" }}>
+              Tunisian consulting agency
+            </span>
+          </div>
         </div>
 
         <nav className="sidebar-nav">
@@ -101,11 +113,12 @@ export function AppShell() {
                 key={item.to}
                 to={item.to}
                 end={item.end}
+                title={item.label}
                 className={({ isActive }) =>
                   `nav-link ${isActive ? "active" : ""}`
                 }
               >
-                <Icon style={{ flexShrink: 0 }} />
+                <Icon size={18} style={{ flexShrink: 0 }} />
                 <span data-label style={{ whiteSpace: "nowrap" }}>
                   {item.label}
                 </span>
@@ -117,9 +130,10 @@ export function AppShell() {
             type="button"
             onClick={toggleChatbot}
             className="nav-link"
+            title="AI Chatbot"
             style={{ marginTop: "4px", width: "100%", textAlign: "left" }}
           >
-            <IconBot style={{ flexShrink: 0 }} />
+            <IconBot size={18} style={{ flexShrink: 0 }} />
             <span data-label style={{ whiteSpace: "nowrap" }}>
               AI Chatbot
             </span>

@@ -1,4 +1,4 @@
-export function Icon({ children, size = 18, className = "" }) {
+export function Icon({ children, size = 18, className = "", style = {}, ...props }) {
   return (
     <svg
       width={size}
@@ -10,7 +10,9 @@ export function Icon({ children, size = 18, className = "" }) {
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
+      style={{ flexShrink: 0, ...style }}
       aria-hidden
+      {...props}
     >
       {children}
     </svg>

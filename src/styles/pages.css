@@ -61,8 +61,9 @@
 }
 
 .login-logo {
+  height: 50px;
+  width: 50px;
   margin-bottom: 16px;
-  color: var(--color-brand);
 }
 
 .login-title {
