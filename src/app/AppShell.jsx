@@ -92,7 +92,7 @@ export function AppShell() {
         <div className="flex h-[70px] items-center gap-3 px-5">
           <LogoMark size={28} />
           <span data-label className="whitespace-nowrap text-[15px] font-bold text-ink">
-            Zouhour
+            TCA
           </span>
         </div>
 
