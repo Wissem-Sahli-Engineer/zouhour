@@ -28,31 +28,31 @@ export function Cast({ reaction }) {
   }, []);
 
   return (
-    <div ref={rootRef} className="cast-stage relative flex h-full flex-1 items-end justify-center overflow-hidden bg-surface">
-      <div className="relative flex items-end pb-[70px]" style={{ gap: "-10px" }}>
+    <div ref={rootRef} className="cast-stage">
+      <div className="cast-characters" style={{ gap: "-10px" }}>
         {CHARACTERS.map((c) => (
           <div
             key={c.id}
-            className={`char relative flex items-center justify-center ${reaction || ""}`}
+            className={`char ${reaction || ""}`}
             style={{ margin: `0 ${c.mx}`, zIndex: c.z, animationDelay: c.delay }}
           >
             <div className={`relative ${c.body}`} />
-            <div className="absolute left-1/2 flex -translate-x-1/2 -translate-y-1/2" style={{ top: c.eyesTop, gap: c.gap }}>
-              <div className="eye flex h-4 w-4 items-center justify-center rounded-full bg-white shadow-[inset_0_0_0_1px_rgba(0,0,0,.05)]">
-                <div className="pupil h-[7px] w-[7px] rounded-full bg-ink" />
+            <div className="eyes" style={{ top: c.eyesTop, gap: c.gap }}>
+              <div className="eye">
+                <div className="pupil" />
               </div>
-              <div className="eye flex h-4 w-4 items-center justify-center rounded-full bg-white shadow-[inset_0_0_0_1px_rgba(0,0,0,.05)]">
-                <div className="pupil h-[7px] w-[7px] rounded-full bg-ink" />
+              <div className="eye">
+                <div className="pupil" />
               </div>
             </div>
             <div
-              className="absolute left-1/2 h-[3px] -translate-x-1/2 rounded-[0_0_10px_10px] bg-ink"
+              className="mouth"
               style={{ top: c.mouthTop, width: c.mouthW }}
             />
           </div>
         ))}
       </div>
-      <div className="absolute inset-x-0 bottom-0 h-[60px] bg-gradient-to-t from-black/5 to-transparent" />
+      <div className="stage-ground" />
     </div>
   );
 }

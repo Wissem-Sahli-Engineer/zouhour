@@ -45,42 +45,95 @@ export function ChatbotPanel() {
   return (
     <aside
       ref={panelRef}
-      className="fixed bottom-24 right-6 z-40 flex h-[min(520px,70vh)] w-[380px] translate-x-[420px] flex-col overflow-hidden rounded-card border border-line bg-white opacity-0 shadow-login"
+      style={{
+        position: "fixed",
+        bottom: "96px",
+        right: "24px",
+        zIndex: 40,
+        display: "flex",
+        height: "min(520px, 70vh)",
+        width: "380px",
+        transform: "translateX(420px)",
+        flexDirection: "column",
+        overflow: "hidden",
+        borderRadius: "var(--radius-card)",
+        border: "1px solid var(--color-line)",
+        backgroundColor: "var(--color-white)",
+        opacity: 0,
+        boxShadow: "var(--shadow-login)",
+      }}
     >
-      <div className="flex items-center justify-between border-b border-line px-5 py-4">
+      <div
+        className="flex-between"
+        style={{ borderBottom: "1px solid var(--color-line)", padding: "16px 20px" }}
+      >
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">Internal</p>
-          <h2 className="text-[16px] font-bold text-ink">Agency assistant</h2>
+          <p style={{ fontSize: "11px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.14em", color: "var(--color-muted)" }}>
+            Internal
+          </p>
+          <h2 style={{ fontSize: "16px", fontWeight: "700", color: "var(--color-ink)" }}>Agency assistant</h2>
         </div>
         <button
           type="button"
           onClick={() => setChatbot(false)}
-          className="rounded-nav p-2 text-muted hover:bg-surface hover:text-ink"
+          className="icon-btn"
           aria-label="Close chatbot"
         >
           <IconClose />
         </button>
       </div>
-      <div className="flex-1 space-y-3 overflow-auto p-5">
+
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "20px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px",
+        }}
+      >
         {messages.map((m, i) => (
           <div
             key={i}
-            className={`max-w-[85%] rounded-[14px] px-3.5 py-2.5 text-[13px] leading-relaxed ${
-              m.from === "bot" ? "bg-surface text-ink" : "ml-auto bg-ink text-white"
-            }`}
+            style={{
+              maxWidth: "85%",
+              borderRadius: "14px",
+              padding: "10px 14px",
+              fontSize: "13px",
+              lineHeight: "1.45",
+              backgroundColor: m.from === "bot" ? "var(--color-surface)" : "var(--color-ink)",
+              color: m.from === "bot" ? "var(--color-ink)" : "var(--color-white)",
+              marginLeft: m.from === "bot" ? 0 : "auto",
+            }}
           >
             {m.text}
           </div>
         ))}
       </div>
-      <form onSubmit={send} className="flex gap-2 border-t border-line p-3">
+
+      <form
+        onSubmit={send}
+        style={{
+          display: "flex",
+          gap: "8px",
+          borderTop: "1px solid var(--color-line)",
+          padding: "12px",
+        }}
+      >
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder="Ask about a file…"
-          className="flex-1 rounded-field border-[1.5px] border-line px-3 py-2 text-body outline-none focus:border-brand"
+          className="input-box"
+          style={{ flex: 1 }}
         />
-        <button type="submit" className="rounded-btn bg-brand px-3 text-white hover:bg-brand-dark" aria-label="Send">
+        <button
+          type="submit"
+          className="btn btn-brand"
+          style={{ width: "auto", padding: "10px 14px" }}
+          aria-label="Send"
+        >
           <IconSend />
         </button>
       </form>

@@ -18,10 +18,20 @@ import { MONTHLY, STATS, STATUS } from "./mock";
 function Tip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-field border border-line bg-white px-3 py-2 text-[12px] text-ink">
-      <p className="mb-1 font-semibold">{label}</p>
+    <div
+      style={{
+        borderRadius: "var(--radius-field)",
+        border: "1px solid var(--color-line)",
+        backgroundColor: "var(--color-white)",
+        padding: "8px 12px",
+        fontSize: "12px",
+        color: "var(--color-ink)",
+        boxShadow: "var(--shadow-soft)",
+      }}
+    >
+      <p style={{ marginBottom: "4px", fontWeight: "600" }}>{label}</p>
       {payload.map((p) => (
-        <p key={p.dataKey} className="text-muted">
+        <p key={p.dataKey} style={{ color: "var(--color-muted)" }}>
           {p.name}: {p.value}
         </p>
       ))}
@@ -34,35 +44,43 @@ export function DashboardPage() {
   useScrollReveal(root);
 
   return (
-    <div ref={root} className="mx-auto max-w-[1180px]">
+    <div ref={root} className="page-container-max">
       <PageTitle kicker="Overview" title="This month at a glance" />
 
-      <div className="grid grid-cols-12 gap-5">
-        <div data-reveal className="col-span-12 rounded-card bg-ink px-8 py-7 text-white lg:col-span-7">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-white/50">Revenue this month</p>
-          <p className="mt-2 text-[44px] font-bold leading-none">TND 17,680</p>
-          <p className="mt-3 max-w-md text-[14px] text-white/60">
+      <div className="grid-12">
+        <div data-reveal className="col-7 card-ink">
+          <p style={{ fontSize: "12px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.14em", color: "rgba(255,255,255,0.5)" }}>
+            Revenue this month
+          </p>
+          <p style={{ marginTop: "8px", fontSize: "var(--text-hero)", fontWeight: "700", lineHeight: "1" }}>
+            TND 17,680
+          </p>
+          <p style={{ marginTop: "12px", maxWidth: "420px", fontSize: "14px", color: "rgba(255,255,255,0.6)" }}>
             Up from August on Schengen files. Seven invoices still open — treasury has the aging list.
           </p>
         </div>
 
-        <div className="col-span-12 grid grid-cols-2 gap-5 lg:col-span-5">
-          {STATS.map((s) => (
-            <div data-reveal key={s.label} className="rounded-card bg-white p-5">
-              <div className="mb-4 h-1 w-8" style={{ background: s.accent }} />
-              <p className="text-[12px] font-semibold text-muted">{s.label}</p>
-              <p className="mt-1 text-[26px] font-bold text-ink">{s.value}</p>
-              <p className="mt-1 text-[12px] text-muted">{s.note}</p>
-            </div>
-          ))}
+        <div className="col-5">
+          <div className="grid-2">
+            {STATS.map((s) => (
+              <div data-reveal key={s.label} className="stat-mini-card">
+                <div className="stat-accent-bar" style={{ background: s.accent }} />
+                <p className="stat-label">{s.label}</p>
+                <p className="stat-value">{s.value}</p>
+                <p className="stat-note">{s.note}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div data-reveal className="col-span-12 rounded-card bg-white p-6 lg:col-span-8">
-          <div className="mb-4 flex items-baseline justify-between">
-            <h2 className="text-[16px] font-bold text-ink">Applications vs new clients</h2>
-            <span className="text-[12px] text-muted">Last 6 months</span>
+        <div data-reveal className="col-8 chart-card">
+          <div className="chart-header">
+            <h2 style={{ fontSize: "16px", fontWeight: "700", color: "var(--color-ink)" }}>
+              Applications vs new clients
+            </h2>
+            <span style={{ fontSize: "12px", color: "var(--color-muted)" }}>Last 6 months</span>
           </div>
-          <div className="h-[280px]">
+          <div style={{ height: "280px" }}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={MONTHLY}>
                 <CartesianGrid stroke="#e7e7ea" vertical={false} />
@@ -76,9 +94,11 @@ export function DashboardPage() {
           </div>
         </div>
 
-        <div data-reveal className="col-span-12 rounded-card bg-white p-6 lg:col-span-4">
-          <h2 className="mb-4 text-[16px] font-bold text-ink">By status</h2>
-          <div className="h-[180px]">
+        <div data-reveal className="col-4 chart-card">
+          <h2 style={{ marginBottom: "16px", fontSize: "16px", fontWeight: "700", color: "var(--color-ink)" }}>
+            By status
+          </h2>
+          <div style={{ height: "180px" }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={STATUS} layout="vertical" margin={{ left: 8, right: 8 }}>
                 <XAxis type="number" hide />
@@ -91,7 +111,9 @@ export function DashboardPage() {
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <p className="mt-3 text-[12.5px] text-muted">7 files blocked on documents — follow up before month-end.</p>
+          <p style={{ marginTop: "12px", fontSize: "12.5px", color: "var(--color-muted)" }}>
+            7 files blocked on documents — follow up before month-end.
+          </p>
         </div>
       </div>
     </div>

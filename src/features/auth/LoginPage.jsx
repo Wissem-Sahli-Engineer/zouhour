@@ -52,7 +52,6 @@ export function LoginPage() {
     { scope: panelRef, dependencies: [mode, signupPending] }
   );
 
-  // Early return AFTER all hooks to satisfy React's rules of hooks
   if (token) return <Navigate to="/" replace />;
 
   const onChange = (key) => (e) => {
@@ -100,22 +99,19 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#e9e9ec] p-5">
-      <div className="flex h-[560px] max-h-[90vh] w-[920px] max-w-[94vw] overflow-hidden rounded-[24px] bg-white shadow-[0_30px_60px_-20px_rgba(0,0,0,0.25)] max-md:h-auto max-md:flex-col">
-        <div className="max-md:h-[200px] max-md:w-full md:flex-1">
+    <div className="login-view-wrapper">
+      <div className="login-card">
+        <div className="login-stage-container">
           <Cast reaction={reaction} />
         </div>
 
-        <div
-          ref={panelRef}
-          className="flex w-[360px] shrink-0 flex-col items-center overflow-y-auto px-10 py-[45px] text-center max-md:w-full max-md:px-6 max-md:py-[30px]"
-        >
+        <div ref={panelRef} className="login-panel">
           {signupPending ? (
-            <div className="w-full text-left" data-enter>
-              <LogoMark size={36} className="mb-4 text-brand" />
-              <h1 className="mb-1.5 text-2xl font-bold text-ink">Request sent</h1>
-              <p className="mb-6 text-[13px] text-muted">
-                We emailed an admin about <span className="font-semibold text-ink">{signupEmail}</span>. You’ll get access after approval — no account is created yet.
+            <div style={{ width: "100%", textAlign: "left" }} data-enter>
+              <LogoMark size={36} className="login-logo" />
+              <h1 className="login-title">Request sent</h1>
+              <p className="login-subtitle">
+                We emailed an admin about <strong style={{ color: "var(--color-ink)" }}>{signupEmail}</strong>. You’ll get access after approval — no account is created yet.
               </p>
               <Button
                 variant="brand"
@@ -129,17 +125,17 @@ export function LoginPage() {
             </div>
           ) : (
             <>
-              <LogoMark size={36} className="mb-4 text-brand" data-enter />
-              <h1 className="mb-1.5 text-2xl font-bold text-ink" data-enter>
+              <LogoMark size={36} className="login-logo" data-enter />
+              <h1 className="login-title" data-enter>
                 Zouhour Agency
               </h1>
-              <p className="mb-6 text-[13px] text-muted" data-enter>
+              <p className="login-subtitle" data-enter>
                 {mode === "signup"
                   ? "Request access — an admin will approve your account"
                   : "Sign in to manage client visa applications"}
               </p>
 
-              <form className="w-full text-left" onSubmit={submit} noValidate>
+              <form className="login-form" onSubmit={submit} noValidate>
                 {mode === "signup" ? (
                   <Field label="Full name" error={errors.name}>
                     <div data-enter>
@@ -166,7 +162,7 @@ export function LoginPage() {
                 </Field>
 
                 <Field label="Password" error={errors.password}>
-                  <div className="relative flex items-center" data-enter>
+                  <div style={{ position: "relative", display: "flex", alignItems: "center" }} data-enter>
                     <UnderlineInput
                       type={showPass ? "text" : "password"}
                       value={form.password}
@@ -177,7 +173,7 @@ export function LoginPage() {
                     />
                     <button
                       type="button"
-                      className="absolute right-0 p-1 text-[#b6b6bd]"
+                      className="input-eye-toggle"
                       aria-label="Show password"
                       onClick={() => setShowPass((v) => !v)}
                     >
@@ -209,11 +205,10 @@ export function LoginPage() {
                     </Field>
                   </>
                 ) : (
-                  <div className="mb-[22px] mt-1 flex items-center justify-between text-[12.5px]" data-enter>
-                    <label className="flex items-center gap-[7px] text-muted">
+                  <div className="login-row-remember" data-enter>
+                    <label className="checkbox-label">
                       <input
                         type="checkbox"
-                        className="h-3.5 w-3.5 accent-brand"
                         checked={form.remember}
                         onChange={onChange("remember")}
                       />
@@ -221,7 +216,7 @@ export function LoginPage() {
                     </label>
                     <button
                       type="button"
-                      className="bg-transparent p-0 text-[12.5px] text-muted hover:text-brand"
+                      className="forgot-link"
                       onClick={() => {
                         play("nod");
                         toast(`Password reset link sent to ${form.email || "your email"}`, "ok");
@@ -239,32 +234,33 @@ export function LoginPage() {
                 </div>
 
                 {mode === "login" ? (
-                  <button
-                    type="button"
-                    data-enter
-                    className="mt-2.5 flex w-full items-center justify-center gap-[9px] rounded-btn border-[1.5px] border-line bg-white py-[11px] text-[13.5px] font-semibold text-ink transition-colors hover:border-[#d9d9de] hover:bg-[#f7f7f8]"
-                    onClick={() => {
-                      login({ email: form.email || "demo@example.com", remember: form.remember });
-                      play("nod");
-                      toast("Signed in with Google!", "ok");
-                      navigate("/");
-                    }}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                      <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.62z" />
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                    </svg>
-                    Continue with Google
-                  </button>
+                  <div style={{ marginTop: "10px" }} data-enter>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => {
+                        login({ email: form.email || "demo@example.com", remember: form.remember });
+                        play("nod");
+                        toast("Signed in with Google!", "ok");
+                        navigate("/");
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden style={{ marginRight: "8px" }}>
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.62z" />
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                      </svg>
+                      Continue with Google
+                    </Button>
+                  </div>
                 ) : null}
 
-                <div className="mt-5 text-center text-[13px] text-muted" data-enter>
+                <div className="signup-prompt-row" data-enter>
                   {mode === "signup" ? "Already have an account?" : "Don't have an account?"}{" "}
                   <button
                     type="button"
-                    className="bg-transparent p-0 text-[13px] font-semibold text-brand hover:underline"
+                    className="signup-link-btn"
                     onClick={() => {
                       setMode((m) => (m === "login" ? "signup" : "login"));
                       setErrors({});

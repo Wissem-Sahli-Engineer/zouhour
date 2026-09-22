@@ -17,8 +17,17 @@ export function Icon({ children, size = 18, className = "" }) {
   );
 }
 
-export const LogoMark = ({ size = 28, className = "text-brand", ...props }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden {...props}>
+export const LogoMark = ({ size = 28, className = "", style = {}, ...props }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    className={className}
+    style={{ color: "var(--color-brand)", ...style }}
+    aria-hidden
+    {...props}
+  >
     <path d="M12 2L2 8l10 6 10-6-10-6z" fill="currentColor" />
     <path d="M2 16l10 6 10-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     <path d="M2 11l10 6 10-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />

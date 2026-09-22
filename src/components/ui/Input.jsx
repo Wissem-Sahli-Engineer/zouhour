@@ -1,8 +1,8 @@
-export function Field({ label, error, children }) {
+export function Field({ label, error, className = "", children }) {
   return (
-    <div className={`mb-4.5 ${error ? "text-danger" : ""}`}>
+    <div className={`field-group ${className}`}>
       {label ? (
-        <label className={`mb-1.5 block text-label ${error ? "text-danger" : "text-ink"}`}>
+        <label className={`field-label ${error ? "error" : ""}`}>
           {label}
         </label>
       ) : null}
@@ -14,9 +14,7 @@ export function Field({ label, error, children }) {
 export function UnderlineInput({ error, className = "", ...props }) {
   return (
     <input
-      className={`w-full border-0 border-b-[1.5px] bg-transparent py-2 pr-7 text-body text-ink outline-none transition-colors placeholder:text-muted/70 ${
-        error ? "border-danger" : "border-line focus:border-brand"
-      } ${className}`}
+      className={`input-underline ${error ? "error" : ""} ${className}`}
       {...props}
     />
   );
@@ -25,7 +23,7 @@ export function UnderlineInput({ error, className = "", ...props }) {
 export function BoxInput({ className = "", ...props }) {
   return (
     <input
-      className={`w-full rounded-field border-[1.5px] border-line bg-white px-3 py-2.5 text-body text-ink outline-none transition-colors focus:border-brand ${className}`}
+      className={`input-box ${className}`}
       {...props}
     />
   );
@@ -34,7 +32,7 @@ export function BoxInput({ className = "", ...props }) {
 export function BoxSelect({ className = "", children, ...props }) {
   return (
     <select
-      className={`w-full rounded-field border-[1.5px] border-line bg-white px-3 py-2.5 text-body text-ink outline-none transition-colors focus:border-brand ${className}`}
+      className={`select-box ${className}`}
       {...props}
     >
       {children}

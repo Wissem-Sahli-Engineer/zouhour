@@ -20,9 +20,9 @@ const TABS = [
 ];
 
 const TONE = {
-  paid: "text-success",
-  pending: "text-accent-orange",
-  overdue: "text-danger",
+  paid: "var(--color-success)",
+  pending: "var(--color-accent-orange)",
+  overdue: "var(--color-danger)",
 };
 
 export function AccountingPage() {
@@ -30,34 +30,41 @@ export function AccountingPage() {
   const [open, setOpen] = useState(INVOICES[0]);
 
   return (
-    <div className="mx-auto max-w-[1180px]">
+    <div className="page-container-max">
       <PageTitle kicker="Finance" title="Accounting" />
-      <div className="grid grid-cols-12 gap-6">
-        <aside className="col-span-12 flex flex-row gap-2 lg:col-span-3 lg:flex-col">
+      <div className="grid-12">
+        <aside className="col-4" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           {TABS.map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => setTab(t.id)}
-              className={`rounded-nav px-4 py-3 text-left text-[13.5px] font-semibold ${
-                tab === t.id ? "bg-ink text-white" : "bg-white text-muted hover:text-ink"
-              }`}
+              style={{
+                borderRadius: "var(--radius-nav)",
+                padding: "12px 16px",
+                textAlign: "left",
+                fontSize: "13.5px",
+                fontWeight: "600",
+                transition: "all 0.15s ease",
+                backgroundColor: tab === t.id ? "var(--color-ink)" : "var(--color-white)",
+                color: tab === t.id ? "var(--color-white)" : "var(--color-muted)",
+              }}
             >
               {t.label}
             </button>
           ))}
         </aside>
 
-        <section className="col-span-12 lg:col-span-9">
+        <section className="col-8">
           {tab === "invoices" ? (
-            <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-              <div className="overflow-hidden rounded-card bg-white">
-                <table className="w-full text-left text-[14px]">
+            <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: "20px" }}>
+              <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+                <table className="data-table">
                   <thead>
-                    <tr className="border-b border-line text-[12px] font-semibold uppercase tracking-wide text-muted">
-                      <th className="px-5 py-3">Invoice</th>
-                      <th className="px-5 py-3">Amount</th>
-                      <th className="px-5 py-3">Status</th>
+                    <tr>
+                      <th>Invoice</th>
+                      <th>Amount</th>
+                      <th>Status</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -65,41 +72,56 @@ export function AccountingPage() {
                       <tr
                         key={inv.id}
                         onClick={() => setOpen(inv)}
-                        className={`cursor-pointer border-b border-line last:border-0 ${open?.id === inv.id ? "bg-surface" : ""}`}
+                        style={{
+                          cursor: "pointer",
+                          backgroundColor: open?.id === inv.id ? "var(--color-surface)" : "transparent",
+                        }}
                       >
-                        <td className="px-5 py-3 font-semibold">{inv.id}</td>
-                        <td className="px-5 py-3">TND {inv.amount.toLocaleString()}</td>
-                        <td className={`px-5 py-3 font-semibold capitalize ${TONE[inv.status]}`}>{inv.status}</td>
+                        <td style={{ fontWeight: "600" }}>{inv.id}</td>
+                        <td>TND {inv.amount.toLocaleString()}</td>
+                        <td style={{ fontWeight: "600", textTransform: "capitalize", color: TONE[inv.status] }}>
+                          {inv.status}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
               {open ? (
-                <div className="rounded-card bg-white p-6">
-                  <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-muted">Detail</p>
-                  <h2 className="mt-1 text-[22px] font-bold">{open.id}</h2>
-                  <p className="mt-2 text-[14px] text-muted">{open.client}</p>
-                  <p className="mt-6 text-[32px] font-bold">TND {open.amount.toLocaleString()}</p>
-                  <p className={`mt-2 text-[13px] font-semibold capitalize ${TONE[open.status]}`}>{open.status}</p>
-                  <p className="mt-4 text-[13px] text-muted">Issued {open.date}</p>
+                <div className="card">
+                  <p style={{ fontSize: "12px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.14em", color: "var(--color-muted)" }}>
+                    Detail
+                  </p>
+                  <h2 style={{ marginTop: "4px", fontSize: "22px", fontWeight: "700" }}>{open.id}</h2>
+                  <p style={{ marginTop: "8px", fontSize: "14px", color: "var(--color-muted)" }}>{open.client}</p>
+                  <p style={{ marginTop: "24px", fontSize: "32px", fontWeight: "700" }}>
+                    TND {open.amount.toLocaleString()}
+                  </p>
+                  <p style={{ marginTop: "8px", fontSize: "13px", fontWeight: "600", textTransform: "capitalize", color: TONE[open.status] }}>
+                    {open.status}
+                  </p>
+                  <p style={{ marginTop: "16px", fontSize: "13px", color: "var(--color-muted)" }}>Issued {open.date}</p>
                 </div>
               ) : null}
             </div>
           ) : null}
 
           {tab === "treasury" ? (
-            <div className="rounded-card bg-white p-6">
-              <h2 className="mb-1 text-[16px] font-bold">Spending this month</h2>
-              <p className="mb-5 text-[13px] text-muted">Categorized outflows — mock ledger.</p>
-              <ul>
+            <div className="card">
+              <h2 style={{ marginBottom: "4px", fontSize: "16px", fontWeight: "700" }}>Spending this month</h2>
+              <p style={{ marginBottom: "20px", fontSize: "13px", color: "var(--color-muted)" }}>Categorized outflows — mock ledger.</p>
+              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column" }}>
                 {EXPENSES.map((e) => (
-                  <li key={e.id} className="flex items-baseline justify-between border-b border-line py-3 last:border-0">
+                  <li
+                    key={e.id}
+                    className="flex-between"
+                    style={{ borderBottom: "1px solid var(--color-line)", padding: "12px 0" }}
+                  >
                     <div>
-                      <p className="font-semibold">{e.category}</p>
-                      <p className="text-[13px] text-muted">{e.note}</p>
+                      <p style={{ fontWeight: "600" }}>{e.category}</p>
+                      <p style={{ fontSize: "13px", color: "var(--color-muted)" }}>{e.note}</p>
                     </div>
-                    <span className="font-semibold">TND {e.amount}</span>
+                    <span style={{ fontWeight: "600" }}>TND {e.amount}</span>
                   </li>
                 ))}
               </ul>
@@ -107,14 +129,14 @@ export function AccountingPage() {
           ) : null}
 
           {tab === "banking" ? (
-            <div className="space-y-4">
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               {ACCOUNTS.map((a, i) => (
-                <div key={a.id} className={`rounded-card p-6 ${i === 0 ? "bg-ink text-white" : "bg-white"}`}>
-                  <p className={`text-[12px] font-semibold uppercase tracking-[0.14em] ${i === 0 ? "text-white/50" : "text-muted"}`}>
+                <div key={a.id} className={i === 0 ? "card-ink" : "card"}>
+                  <p style={{ fontSize: "12px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.14em", color: i === 0 ? "rgba(255,255,255,0.5)" : "var(--color-muted)" }}>
                     {a.currency}
                   </p>
-                  <h2 className="mt-1 text-[18px] font-bold">{a.name}</h2>
-                  <p className="mt-4 text-[28px] font-bold">
+                  <h2 style={{ marginTop: "4px", fontSize: "18px", fontWeight: "700" }}>{a.name}</h2>
+                  <p style={{ marginTop: "16px", fontSize: "28px", fontWeight: "700" }}>
                     {a.currency} {a.balance.toLocaleString()}
                   </p>
                 </div>
@@ -123,9 +145,9 @@ export function AccountingPage() {
           ) : null}
 
           {tab === "stats" ? (
-            <div className="rounded-card bg-white p-6">
-              <h2 className="mb-4 text-[16px] font-bold">Income vs expenses</h2>
-              <div className="h-[300px]">
+            <div className="card">
+              <h2 style={{ marginBottom: "16px", fontSize: "16px", fontWeight: "700" }}>Income vs expenses</h2>
+              <div style={{ height: "300px" }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={CASHFLOW}>
                     <CartesianGrid stroke="#e7e7ea" vertical={false} />

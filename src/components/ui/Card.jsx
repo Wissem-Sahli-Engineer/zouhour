@@ -1,6 +1,6 @@
 export function Card({ className = "", children }) {
   return (
-    <div className={`rounded-card bg-white p-8 ${className}`}>
+    <div className={`card ${className}`}>
       {children}
     </div>
   );
@@ -8,14 +8,12 @@ export function Card({ className = "", children }) {
 
 export function PageTitle({ kicker, title, action }) {
   return (
-    <div className="mb-8 flex items-end justify-between gap-6">
+    <div className="page-header">
       <div>
         {kicker ? (
-          <p className="mb-1 text-[12px] font-semibold uppercase tracking-[0.14em] text-muted">
-            {kicker}
-          </p>
+          <p className="page-kicker">{kicker}</p>
         ) : null}
-        <h1 className="text-[28px] font-bold leading-tight text-ink">{title}</h1>
+        <h1 className="page-title">{title}</h1>
       </div>
       {action}
     </div>

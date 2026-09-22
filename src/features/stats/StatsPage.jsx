@@ -48,14 +48,14 @@ export function StatsPage() {
   }, [visa, officer]);
 
   return (
-    <div ref={root} className="mx-auto max-w-[1180px]">
+    <div ref={root} className="page-container-max">
       <PageTitle kicker="Analytics" title="Pipeline by week" />
 
-      <div className="grid grid-cols-12 gap-6">
-        <aside data-reveal className="col-span-12 space-y-4 rounded-card bg-white p-6 lg:col-span-3">
-          <p className="text-label text-ink">Filters</p>
+      <div className="grid-12">
+        <aside data-reveal className="col-4 card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <p style={{ fontSize: "14px", fontWeight: "700", color: "var(--color-ink)" }}>Filters</p>
           <div>
-            <p className="mb-1.5 text-[12px] text-muted">Date range</p>
+            <p style={{ marginBottom: "6px", fontSize: "12px", color: "var(--color-muted)" }}>Date range</p>
             <BoxSelect value={range} onChange={(e) => setRange(e.target.value)}>
               <option value="sep">September 2026</option>
               <option value="aug">August 2026</option>
@@ -63,7 +63,7 @@ export function StatsPage() {
             </BoxSelect>
           </div>
           <div>
-            <p className="mb-1.5 text-[12px] text-muted">Visa type</p>
+            <p style={{ marginBottom: "6px", fontSize: "12px", color: "var(--color-muted)" }}>Visa type</p>
             <BoxSelect value={visa} onChange={(e) => setVisa(e.target.value)}>
               <option value="all">All types</option>
               <option value="Schengen">Schengen</option>
@@ -72,24 +72,26 @@ export function StatsPage() {
             </BoxSelect>
           </div>
           <div>
-            <p className="mb-1.5 text-[12px] text-muted">Officer</p>
+            <p style={{ marginBottom: "6px", fontSize: "12px", color: "var(--color-muted)" }}>Officer</p>
             <BoxSelect value={officer} onChange={(e) => setOfficer(e.target.value)}>
               <option value="all">All officers</option>
               <option value="Amina">Amina</option>
               <option value="Karim">Karim</option>
             </BoxSelect>
           </div>
-          <p className="pt-2 text-[12.5px] leading-relaxed text-muted">
+          <p style={{ paddingTop: "8px", fontSize: "12.5px", lineHeight: "1.5", color: "var(--color-muted)" }}>
             Mock series for {range === "sep" ? "September" : range === "aug" ? "August" : "Q3"}. Connect live extracts when the stats API exists.
           </p>
         </aside>
 
-        <div data-reveal className="col-span-12 rounded-card bg-white p-6 lg:col-span-9">
-          <h2 className="mb-1 text-[16px] font-bold text-ink">Filed applications</h2>
-          <p className="mb-6 text-[13px] text-muted">
+        <div data-reveal className="col-8 card">
+          <h2 style={{ marginBottom: "4px", fontSize: "16px", fontWeight: "700", color: "var(--color-ink)" }}>
+            Filed applications
+          </h2>
+          <p style={{ marginBottom: "24px", fontSize: "13px", color: "var(--color-muted)" }}>
             {visa === "all" ? "All visa types" : visa} · {officer === "all" ? "all officers" : officer}
           </p>
-          <div className="h-[320px]">
+          <div style={{ height: "320px" }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={series}>
                 <CartesianGrid stroke="#e7e7ea" vertical={false} />

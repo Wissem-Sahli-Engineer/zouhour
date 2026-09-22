@@ -3,13 +3,13 @@ import { Link, useParams } from "react-router-dom";
 import { FALLBACK_CLIENTS, enrich } from "./mock";
 
 const STATUS_TONE = {
-  paid: "text-success",
-  pending: "text-accent-orange",
-  overdue: "text-danger",
-  "In review": "text-brand",
-  "Pending docs": "text-accent-orange",
-  Submitted: "text-muted",
-  Approved: "text-success",
+  paid: "var(--color-success)",
+  pending: "var(--color-accent-orange)",
+  overdue: "var(--color-danger)",
+  "In review": "var(--color-brand)",
+  "Pending docs": "var(--color-accent-orange)",
+  Submitted: "var(--color-muted)",
+  Approved: "var(--color-success)",
 };
 
 export function ClientDetailPage() {
@@ -46,17 +46,17 @@ export function ClientDetailPage() {
 
   if (missing) {
     return (
-      <div className="mx-auto max-w-[900px]">
-        <Link to="/clients" className="text-[13px] font-semibold text-brand">
+      <div style={{ margin: "0 auto", maxWidth: "900px" }}>
+        <Link to="/clients" style={{ fontSize: "13px", fontWeight: "600", color: "var(--color-brand)" }}>
           ← Clients
         </Link>
-        <p className="mt-6 text-muted">Client not found.</p>
+        <p style={{ marginTop: "24px", color: "var(--color-muted)" }}>Client not found.</p>
       </div>
     );
   }
 
   if (!client) {
-    return <p className="text-muted">Loading file…</p>;
+    return <p style={{ color: "var(--color-muted)" }}>Loading file…</p>;
   }
 
   const fields = [
@@ -71,74 +71,95 @@ export function ClientDetailPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-[1100px]">
-      <Link to="/clients" className="text-[13px] font-semibold text-brand">
+    <div style={{ margin: "0 auto", maxWidth: "1100px" }}>
+      <Link to="/clients" style={{ fontSize: "13px", fontWeight: "600", color: "var(--color-brand)" }}>
         ← Clients
       </Link>
-      <div className="mt-6 grid grid-cols-12 gap-6">
-        <div className="col-span-12 lg:col-span-4">
-          <div className="overflow-hidden rounded-card bg-white">
+      <div className="grid-12" style={{ marginTop: "24px" }}>
+        <div className="col-4">
+          <div className="card" style={{ padding: 0, overflow: "hidden" }}>
             {client.user_photo ? (
-              <img src={client.user_photo} alt="Passport portrait" className="h-[280px] w-full object-cover" />
+              <img
+                src={client.user_photo}
+                alt="Passport portrait"
+                style={{ height: "280px", width: "100%", objectFit: "cover" }}
+              />
             ) : (
-              <div className="flex h-[280px] items-center justify-center bg-surface text-muted">No portrait on file</div>
+              <div
+                className="flex-center"
+                style={{ height: "280px", backgroundColor: "var(--color-surface)", color: "var(--color-muted)" }}
+              >
+                No portrait on file
+              </div>
             )}
-            <div className="p-5">
-              <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-muted">Passport holder</p>
-              <h1 className="mt-1 text-[22px] font-bold text-ink">
+            <div style={{ padding: "20px" }}>
+              <p style={{ fontSize: "12px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.14em", color: "var(--color-muted)" }}>
+                Passport holder
+              </p>
+              <h1 style={{ marginTop: "4px", fontSize: "22px", fontWeight: "700", color: "var(--color-ink)" }}>
                 {client.given_name} {client.surname}
               </h1>
-              <p className="mt-1 font-mono text-[13px] text-muted">{client.passport_number}</p>
+              <p style={{ marginTop: "4px", fontFamily: "monospace", fontSize: "13px", color: "var(--color-muted)" }}>
+                {client.passport_number}
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="col-span-12 space-y-6 lg:col-span-8">
-          <div className="rounded-card bg-white p-6">
-            <h2 className="mb-4 text-[16px] font-bold">Personal information</h2>
-            <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
+        <div className="col-8" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+          <div className="card" style={{ padding: "24px" }}>
+            <h2 style={{ marginBottom: "16px", fontSize: "16px", fontWeight: "700" }}>Personal information</h2>
+            <dl className="grid-2" style={{ gap: "16px 24px" }}>
               {fields.map(([k, v]) => (
-                <div key={k}>
-                  <dt className="text-[12px] font-semibold text-muted">{k}</dt>
-                  <dd className="mt-1 text-[14px] text-ink">{v || "—"}</dd>
+                <div key={k} style={{ borderBottom: "1px solid var(--color-line)", paddingBottom: "8px" }}>
+                  <dt style={{ fontSize: "12px", fontWeight: "600", color: "var(--color-muted)" }}>{k}</dt>
+                  <dd style={{ marginTop: "4px", fontSize: "14px", fontWeight: "500", color: "var(--color-ink)" }}>
+                    {v || "—"}
+                  </dd>
                 </div>
               ))}
             </dl>
           </div>
 
-          <div className="rounded-card bg-white p-6">
-            <h2 className="mb-4 text-[16px] font-bold">Visa applications</h2>
-            <ul className="space-y-3">
+          <div className="card" style={{ padding: "24px" }}>
+            <h2 style={{ marginBottom: "16px", fontSize: "16px", fontWeight: "700" }}>Visa applications</h2>
+            <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "12px" }}>
               {client.applications.map((a) => (
-                <li key={a.id} className="flex items-baseline justify-between border-b border-line pb-3 last:border-0 last:pb-0">
+                <li
+                  key={a.id}
+                  className="flex-between"
+                  style={{ borderBottom: "1px solid var(--color-line)", paddingBottom: "12px" }}
+                >
                   <div>
-                    <p className="font-semibold">{a.id}</p>
-                    <p className="text-[13px] text-muted">{a.type}</p>
+                    <p style={{ fontWeight: "600" }}>{a.id}</p>
+                    <p style={{ fontSize: "13px", color: "var(--color-muted)" }}>{a.type}</p>
                   </div>
-                  <span className={`text-[13px] font-semibold ${STATUS_TONE[a.status] || "text-ink"}`}>{a.status}</span>
+                  <span style={{ fontSize: "13px", fontWeight: "600", color: STATUS_TONE[a.status] || "var(--color-ink)" }}>
+                    {a.status}
+                  </span>
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="grid grid-cols-2 gap-6 max-sm:grid-cols-1">
-            <div className="rounded-card bg-white p-6">
-              <h2 className="mb-3 text-[16px] font-bold">Documents</h2>
-              <ul className="space-y-2 text-[14px] text-ink">
+          <div className="grid-2">
+            <div className="card" style={{ padding: "24px" }}>
+              <h2 style={{ marginBottom: "12px", fontSize: "16px", fontWeight: "700" }}>Documents</h2>
+              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px" }}>
                 {client.documents.map((d) => (
-                  <li key={d} className="border-b border-line py-2 last:border-0">
+                  <li key={d} style={{ borderBottom: "1px solid var(--color-line)", padding: "8px 0" }}>
                     {d}
                   </li>
                 ))}
               </ul>
             </div>
-            <div className="rounded-card bg-white p-6">
-              <h2 className="mb-3 text-[16px] font-bold">Invoices</h2>
-              <ul className="space-y-2 text-[14px]">
+            <div className="card" style={{ padding: "24px" }}>
+              <h2 style={{ marginBottom: "12px", fontSize: "16px", fontWeight: "700" }}>Invoices</h2>
+              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px" }}>
                 {client.invoices.map((inv) => (
-                  <li key={inv.id} className="flex justify-between border-b border-line py-2 last:border-0">
+                  <li key={inv.id} className="flex-between" style={{ borderBottom: "1px solid var(--color-line)", padding: "8px 0" }}>
                     <span>{inv.id}</span>
-                    <span className={STATUS_TONE[inv.status]}>{inv.amount}</span>
+                    <span style={{ fontWeight: "600", color: STATUS_TONE[inv.status] }}>{inv.amount}</span>
                   </li>
                 ))}
               </ul>

@@ -30,14 +30,15 @@ export function ClientsPage() {
   });
 
   return (
-    <div className="mx-auto max-w-[1180px]">
+    <div className="page-container-max">
       <PageTitle
         kicker="Database"
         title="Clients"
         action={
           <Link
             to="/clients/scan"
-            className="inline-flex items-center gap-2 rounded-btn bg-brand px-4 py-2.5 text-[13.5px] font-semibold text-white hover:bg-brand-dark"
+            className="btn btn-brand"
+            style={{ width: "auto", display: "inline-flex", gap: "8px", padding: "10px 18px" }}
           >
             <IconScan size={16} />
             Scan passport
@@ -45,60 +46,71 @@ export function ClientsPage() {
         }
       />
 
-      <div className="mb-5">
+      <div style={{ marginBottom: "20px" }}>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Filter by name, passport, phone"
-          className="w-full max-w-sm rounded-field border-[1.5px] border-line bg-white px-3 py-2.5 text-body outline-none focus:border-brand"
+          className="input-box"
+          style={{ maxWidth: "380px" }}
         />
       </div>
 
-      <div className="overflow-hidden rounded-card bg-white">
-        <table className="w-full border-collapse text-left">
-          <thead>
-            <tr className="border-b-[1.5px] border-line bg-[#f9fafb] text-[13px] font-semibold text-muted">
-              <th className="px-4 py-3.5">Photo</th>
-              <th className="px-4 py-3.5">Name</th>
-              <th className="px-4 py-3.5">Passport</th>
-              <th className="px-4 py-3.5">Phone</th>
-              <th className="px-4 py-3.5">Nationality</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 ? (
+      <div className="card" style={{ padding: "0", overflow: "hidden" }}>
+        <div className="table-wrapper">
+          <table className="data-table">
+            <thead>
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-[14px] text-muted">
-                  No clients match that filter.
-                </td>
+                <th style={{ width: "64px" }}>Photo</th>
+                <th>Name</th>
+                <th>Passport</th>
+                <th>Phone</th>
+                <th>Nationality</th>
               </tr>
-            ) : (
-              filtered.map((c) => (
-                <tr key={c.id} className="border-b border-line last:border-0">
-                  <td className="px-4 py-3.5">
-                    <Link to={`/clients/${c.id}`}>
-                      {c.user_photo ? (
-                        <img src={c.user_photo} alt="" className="h-12 w-10 rounded-thumb object-cover" />
-                      ) : (
-                        <div className="flex h-12 w-10 items-center justify-center rounded-thumb bg-surface text-[10px] text-muted">
-                          —
-                        </div>
-                      )}
-                    </Link>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={5} style={{ padding: "40px 16px", textAlign: "center", color: "var(--color-muted)" }}>
+                    No clients match that filter.
                   </td>
-                  <td className="px-4 py-3.5">
-                    <Link to={`/clients/${c.id}`} className="font-semibold text-ink hover:text-brand">
-                      {c.given_name} {c.surname}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3.5 font-mono text-[13px]">{c.passport_number}</td>
-                  <td className="px-4 py-3.5 text-[14px] text-muted">{c.phone}</td>
-                  <td className="px-4 py-3.5 text-[14px]">{c.nationality}</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                filtered.map((c) => (
+                  <tr key={c.id}>
+                    <td>
+                      <Link to={`/clients/${c.id}`} style={{ display: "block" }}>
+                        {c.user_photo ? (
+                          <img src={c.user_photo} alt="" className="table-thumbnail" />
+                        ) : (
+                          <div
+                            className="table-thumbnail flex-center"
+                            style={{ backgroundColor: "var(--color-surface)", fontSize: "10px", color: "var(--color-muted)" }}
+                          >
+                            —
+                          </div>
+                        )}
+                      </Link>
+                    </td>
+                    <td>
+                      <Link
+                        to={`/clients/${c.id}`}
+                        style={{ fontWeight: "600", color: "var(--color-ink)", transition: "color 0.15s" }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = "var(--color-brand)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = "var(--color-ink)")}
+                      >
+                        {c.given_name} {c.surname}
+                      </Link>
+                    </td>
+                    <td style={{ fontFamily: "monospace", fontSize: "13px" }}>{c.passport_number}</td>
+                    <td style={{ color: "var(--color-muted)" }}>{c.phone}</td>
+                    <td>{c.nationality}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

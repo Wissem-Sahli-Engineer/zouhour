@@ -20,12 +20,10 @@ export function ToastHost() {
     };
   }, []);
 
-  const bg = state.type === "err" ? "bg-danger" : "bg-ink";
-
   return (
     <div
-      className={`pointer-events-none fixed left-1/2 top-6 z-[80] -translate-x-1/2 rounded-btn px-[22px] py-3 text-[13.5px] font-semibold text-white shadow-toast transition-transform duration-350 ${bg} ${
-        state.open ? "translate-y-0" : "-translate-y-[140%]"
+      className={`toast-notification ${state.type === "err" ? "err" : "ok"} ${
+        state.open ? "show" : ""
       }`}
     >
       {state.text}
