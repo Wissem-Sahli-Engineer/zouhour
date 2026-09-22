@@ -23,7 +23,9 @@ export function AppRouter() {
             <Route path="/clients" element={<ClientsPage />} />
             <Route path="/clients/scan" element={<ScanPage />} />
             <Route path="/clients/:id" element={<ClientDetailPage />} />
-            <Route path="/accounting" element={<AccountingPage />} />
+            <Route path="/accounting" element={<Navigate to="/accounting/tunisia" replace />} />
+            <Route path="/accounting/tunisia" element={<AccountingPage defaultCountry="tunisia" />} />
+            <Route path="/accounting/libya" element={<AccountingPage defaultCountry="libya" />} />
             <Route path="/chatbot" element={<Navigate to="/" replace />} />
           </Route>
         </Route>

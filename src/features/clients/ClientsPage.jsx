@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { PageTitle } from "../../components/ui/Card";
 import { IconScan } from "../../components/ui/Icons";
 import { FALLBACK_CLIENTS, enrich } from "./mock";
+import { Card } from "../../components/ui/nav";
 
 export function ClientsPage() {
   const [clients, setClients] = useState([]);
@@ -31,6 +32,11 @@ export function ClientsPage() {
 
   return (
     <div className="page-container-max">
+      <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+        <Card />
+      </div>
+
+
       <PageTitle
         kicker="Database"
         title="Clients"

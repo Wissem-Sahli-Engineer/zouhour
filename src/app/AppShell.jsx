@@ -23,7 +23,8 @@ const NAV = [
   { to: "/", label: "Dashboard", icon: IconGrid, end: true },
   { to: "/stats", label: "Stats", icon: IconChart },
   { to: "/clients", label: "Clients", icon: IconPeople },
-  { to: "/accounting", label: "Accounting", icon: IconLedger },
+  { to: "/accounting/tunisia", label: "Accounting TN", icon: IconLedger },
+  { to: "/accounting/libya", label: "Accounting LY", icon: IconLedger },
 ];
 
 export function AppShell() {
