@@ -93,6 +93,11 @@ async def delete_client(client_id: int):
     save_clients(clients)
     return {"status": "success"}
 
+@app.post("/signup-request")
+async def signup_request(data: dict):
+    print("Signup request received:", data)
+    return {"status": "success", "message": "Signup request recorded"}
+
 
 @app.post("/extract")
 async def extract_passport(file: UploadFile = File(...)):
