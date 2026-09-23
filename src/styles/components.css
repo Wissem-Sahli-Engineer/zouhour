@@ -261,6 +261,29 @@
   filter: brightness(0.95);
 }
 
+.chat-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 40;
+  display: flex;
+  height: 56px;
+  width: 56px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-circle);
+  border: none;
+  cursor: pointer;
+  background-color: var(--color-brand);
+  color: var(--color-white);
+  box-shadow: var(--shadow-fab);
+  transition: filter var(--duration-fast);
+}
+
+.chat-fab:hover {
+  filter: brightness(0.95);
+}
+
 /* ---------- Cute Login Character Stage & Cast ---------- */
 .cast-stage {
   position: relative;

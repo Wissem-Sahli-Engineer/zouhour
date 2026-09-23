@@ -8,6 +8,9 @@ import { ClientsPage } from "../features/clients/ClientsPage";
 import { ClientDetailPage } from "../features/clients/ClientDetailPage";
 import { ScanPage } from "../features/clients/ScanPage";
 import { AccountingPage } from "../features/accounting/AccountingPage";
+import { MyRequestsPage } from "../features/requests/MyRequestsPage";
+import { EmployeeRequestsPage } from "../features/requests/EmployeeRequestsPage";
+import { ChatbotPage } from "../features/chatbot/ChatbotPage";
 import { ToastHost } from "../components/ui/Toast";
 
 export function AppRouter() {
@@ -26,7 +29,9 @@ export function AppRouter() {
             <Route path="/accounting" element={<Navigate to="/accounting/tunisia" replace />} />
             <Route path="/accounting/tunisia" element={<AccountingPage defaultCountry="tunisia" />} />
             <Route path="/accounting/libya" element={<AccountingPage defaultCountry="libya" />} />
-            <Route path="/chatbot" element={<Navigate to="/" replace />} />
+            <Route path="/MyRequests" element={<MyRequestsPage />} />
+            <Route path="/EmployeeRequests" element={<EmployeeRequestsPage />} />
+            <Route path="/chatbot" element={<ChatbotPage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

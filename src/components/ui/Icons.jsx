@@ -130,3 +130,59 @@ export const IconSend = (p) => (
     <path d="M4 12l16-8-6 16-2-7-8-1z" />
   </Icon>
 );
+
+export const IconClipboard = (p) => (
+  <Icon {...p}>
+    <rect x="6" y="4" width="12" height="17" rx="2" />
+    <path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" />
+    <path d="M9 11h6M9 15h6" />
+  </Icon>
+);
+
+export const IconUsersGear = (p) => (
+  <Icon {...p}>
+    <path d="M3 20v-1a4 4 0 0 1 4-4h3a4 4 0 0 1 4 4v1" />
+    <circle cx="8.5" cy="8" r="3" />
+    <circle cx="18" cy="17.5" r="2" />
+    <path d="M18 14.3v-.8M18 20.5v.8M20.6 17.5h.8M14.6 17.5h.8M19.9 16l.6-.6M15.5 19.6l.6-.6M19.9 19l.6.6M15.5 15.4l.6.6" />
+  </Icon>
+);
+
+export const IconPalmTree = (p) => (
+  <Icon {...p}>
+    <path d="M12 22V11" />
+    <path d="M12 12c0-3-2-5-5-5 0 3 2 5 5 5z" />
+    <path d="M12 12c0-3 2-5 5-5 0 3-2 5-5 5z" />
+    <path d="M12 11c0-3 1.6-5.5 4-7 0 3-1 5.5-4 7z" />
+    <path d="M12 11c0-3-1.6-5.5-4-7 0 3 1 5.5 4 7z" />
+  </Icon>
+);
+
+export const IconWallet = (p) => (
+  <Icon {...p}>
+    <path d="M3 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
+    <path d="M16 12h3a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-3a2 2 0 0 1 0-4z" />
+  </Icon>
+);
+
+export const IconCoins = (p) => (
+  <Icon {...p}>
+    <ellipse cx="9" cy="7" rx="6" ry="3.2" />
+    <path d="M3 7v5c0 1.77 2.69 3.2 6 3.2s6-1.43 6-3.2V7" />
+    <path d="M9 12.2v5c0 1.77 2.69 3.2 6 3.2s6-1.43 6-3.2v-5" />
+    <ellipse cx="15" cy="12.2" rx="6" ry="3.2" />
+  </Icon>
+);
+
+export const IconChat = (p) => (
+  <Icon {...p}>
+    <path d="M4 5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" />
+    <path d="M8 9.5h8M8 12.5h5" />
+  </Icon>
+);
+
+export const IconExpand = (p) => (
+  <Icon {...p}>
+    <path d="M9 3H3v6M15 3h6v6M21 15v6h-6M3 15v6h6" />
+  </Icon>
+);

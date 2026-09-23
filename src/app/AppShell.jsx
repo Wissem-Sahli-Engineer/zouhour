@@ -1,16 +1,18 @@
 import { useEffect, useRef } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { ChatbotPanel } from "../features/chatbot/ChatbotPanel";
-import { WhatsAppFab } from "../components/WhatsAppFab";
+import { ChatFab } from "../components/ChatFab";
 import {
   IconBell,
   IconBot,
   IconChart,
+  IconClipboard,
   IconGrid,
   IconLedger,
   IconMenu,
   IconPeople,
   IconSearch,
+  IconUsersGear,
   LogoMark,
 } from "../components/ui/Icons";
 import { DURATION, EASE, ScrollTrigger, gsap, useGSAP } from "../lib/gsap";
@@ -25,6 +27,9 @@ const NAV = [
   { to: "/clients", label: "Clients", icon: IconPeople },
   { to: "/accounting/tunisia", label: "Accounting TN", icon: IconLedger },
   { to: "/accounting/libya", label: "Accounting LY", icon: IconLedger },
+  { to: "/MyRequests", label: "My Requests", icon: IconClipboard },
+  { to: "/EmployeeRequests", label: "Employee Requests", icon: IconUsersGear },
+
 ];
 
 export function AppShell() {
@@ -36,7 +41,6 @@ export function AppShell() {
   const logout = useAuth((s) => s.logout);
   const sidebarOpen = useUi((s) => s.sidebarOpen);
   const toggleSidebar = useUi((s) => s.toggleSidebar);
-  const toggleChatbot = useUi((s) => s.toggleChatbot);
   const search = useUi((s) => s.search);
   const setSearch = useUi((s) => s.setSearch);
   const notifications = useUi((s) => s.notifications);
@@ -129,7 +133,7 @@ export function AppShell() {
 
           <button
             type="button"
-            onClick={toggleChatbot}
+            onClick={() => navigate("/chatbot")}
             className="nav-link"
             title="AI Chatbot"
             style={{ marginTop: "4px", width: "100%", textAlign: "left" }}
@@ -226,7 +230,7 @@ export function AppShell() {
       </div>
 
       <ChatbotPanel />
-      <WhatsAppFab />
+      <ChatFab />
     </div>
   );
 }
