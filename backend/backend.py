@@ -1,6 +1,7 @@
 from fastapi import Depends, FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
@@ -10,10 +11,32 @@ import os
 import re
 import requests
 import traceback
+from datetime import date
 
 from backend.db import get_session
-from backend.models import Client, ClientCreate
-from backend.photos import UPLOADS_DIR, delete_photo, save_client_photo
+from backend.models import (
+    AgencyRequest,
+    AgencyRequestCreate,
+    BankAccount,
+    BankLoan,
+    BankLoanCreate,
+    BankTransaction,
+    BankTransactionCreate,
+    Client,
+    ClientCreate,
+    ClientFile,
+    EmployeeRequest,
+    EmployeeRequestCreate,
+    Invoice,
+    InvoiceCreate,
+    Payslip,
+    PayslipCreate,
+    TreasuryEntry,
+    TreasuryEntryCreate,
+)
+from backend.photos import UPLOADS_DIR, delete_photo, save_client_file, save_client_photo
+from backend.invoices import generate_invoice_pdf
+from backend.payroll import generate_payslip_pdf, parse_pointage
 
 app = FastAPI()
 
@@ -26,6 +49,7 @@ app.add_middleware(
 )
 
 QWEN_API_URL = "http://localhost:11434/v1/chat/completions"
+CHAT_MODEL = "qwen2.5vl:3b-8k"
 
 FIELDS = [
     "country",
@@ -96,6 +120,39 @@ def add_client(data: ClientCreate, session: Session = Depends(get_session)):
     return {"status": "success", "client": client_out(client)}
 
 
+@app.put("/clients/{client_id}")
+def update_client(client_id: int, data: ClientCreate, session: Session = Depends(get_session)):
+    client = session.get(Client, client_id)
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    for key, value in data.model_dump(exclude={"user_photo"}).items():
+        setattr(client, key, value)
+
+    old_photo_path = client.photo_path
+    new_photo_path = None
+    try:
+        if data.user_photo:
+            new_photo_path = save_client_photo(client.id, data.user_photo)
+            client.photo_path = new_photo_path
+        session.add(client)
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        delete_photo(new_photo_path)
+        raise HTTPException(
+            status_code=409,
+            detail=f"A client with passport number {data.passport_number} already exists",
+        )
+    except ValueError as e:
+        session.rollback()
+        raise HTTPException(status_code=422, detail=str(e))
+    session.refresh(client)
+    if new_photo_path and old_photo_path and old_photo_path != new_photo_path:
+        delete_photo(old_photo_path)
+    return {"status": "success", "client": client_out(client)}
+
+
 @app.delete("/clients/{client_id}")
 def delete_client(client_id: int, session: Session = Depends(get_session)):
     client = session.get(Client, client_id)
@@ -107,10 +164,144 @@ def delete_client(client_id: int, session: Session = Depends(get_session)):
     delete_photo(photo_path)
     return {"status": "success"}
 
+
+def client_file_out(f: ClientFile) -> dict:
+    return {
+        "id": f.id,
+        "filename": f.filename,
+        "content_type": f.content_type,
+        "uploaded_at": f.uploaded_at.isoformat(),
+        "url": f"{PUBLIC_API_PREFIX}/clients/{f.client_id}/files/{f.id}",
+    }
+
+
+@app.get("/clients/{client_id}/files")
+def list_client_files(client_id: int, session: Session = Depends(get_session)):
+    files = session.exec(
+        select(ClientFile).where(ClientFile.client_id == client_id).order_by(ClientFile.id)
+    ).all()
+    return [client_file_out(f) for f in files]
+
+
+@app.post("/clients/{client_id}/files", status_code=201)
+async def upload_client_files(
+    client_id: int,
+    files: list[UploadFile] = File(...),
+    session: Session = Depends(get_session),
+):
+    client = session.get(Client, client_id)
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    saved = []
+    for file in files:
+        raw = await file.read()
+        rel_path = save_client_file(client_id, file.filename or "file", raw)
+        record = ClientFile(
+            client_id=client_id,
+            filename=file.filename or "file",
+            path=rel_path,
+            content_type=file.content_type,
+        )
+        session.add(record)
+        session.flush()
+        saved.append(record)
+
+    session.commit()
+    for record in saved:
+        session.refresh(record)
+    return [client_file_out(f) for f in saved]
+
+
+@app.get("/clients/{client_id}/files/{file_id}")
+def get_client_file(client_id: int, file_id: int, session: Session = Depends(get_session)):
+    record = session.get(ClientFile, file_id)
+    if not record or record.client_id != client_id:
+        raise HTTPException(status_code=404, detail="File not found")
+    path = UPLOADS_DIR / record.path
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(path, media_type=record.content_type or "application/octet-stream", filename=record.filename)
+
+
+@app.delete("/clients/{client_id}/files/{file_id}")
+def delete_client_file(client_id: int, file_id: int, session: Session = Depends(get_session)):
+    record = session.get(ClientFile, file_id)
+    if not record or record.client_id != client_id:
+        raise HTTPException(status_code=404, detail="File not found")
+    session.delete(record)
+    session.commit()
+    delete_photo(record.path)
+    return {"status": "success"}
+
+
 @app.post("/signup-request")
 async def signup_request(data: dict):
     print("Signup request received:", data)
     return {"status": "success", "message": "Signup request recorded"}
+
+
+@app.post("/chat")
+async def chat(payload: dict):
+    """
+    payload: {
+      "messages": [{"role": "user" | "assistant", "content": "..."}, ...],
+      "image": "data:image/png;base64,..."   # optional, e.g. a live-helper screenshot
+    }
+    Attaches "image" (if present) to the last user message and forwards the
+    conversation to the local Qwen vision model running in Ollama.
+    """
+    messages = payload.get("messages") or []
+    image = payload.get("image")
+
+    if not messages:
+        raise HTTPException(status_code=400, detail="messages is required")
+
+    oai_messages = []
+    last_user_index = max(
+        (i for i, m in enumerate(messages) if m.get("role") == "user"), default=-1
+    )
+
+    for i, m in enumerate(messages):
+        role = m.get("role")
+        content = m.get("content", "")
+        if role not in ("user", "assistant", "system"):
+            continue
+
+        if i == last_user_index and image:
+            oai_messages.append(
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": content},
+                        {"type": "image_url", "image_url": {"url": image}},
+                    ],
+                }
+            )
+        else:
+            oai_messages.append({"role": role, "content": content})
+
+    request_payload = {
+        "model": CHAT_MODEL,
+        "messages": oai_messages,
+        "temperature": 0.4,
+        "max_tokens": 800,
+    }
+
+    try:
+        response = requests.post(QWEN_API_URL, json=request_payload, timeout=120)
+        response.raise_for_status()
+        result = response.json()
+        reply = result["choices"][0]["message"]["content"]
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Could not reach the local model at {QWEN_API_URL}: {e}",
+        )
+    except (KeyError, IndexError):
+        raise HTTPException(status_code=502, detail="Unexpected response from the model")
+
+    return {"reply": reply}
 
 
 @app.post("/extract")
@@ -330,6 +521,302 @@ Dates must use YYYY-MM-DD format.
             status_code=500,
             detail=str(e)
         )
+
+# =====================================================================
+# ============================  TREASURY  ==============================
+# =====================================================================
+
+def treasury_entry_out(e: TreasuryEntry) -> dict:
+    data = e.model_dump()
+    data["entry_date"] = e.entry_date.isoformat()
+    data["created_at"] = e.created_at.isoformat()
+    return data
+
+
+@app.get("/treasury")
+def get_treasury(country: str, session: Session = Depends(get_session)):
+    today = date.today()
+    month_start = today.replace(day=1)
+
+    entries = session.exec(
+        select(TreasuryEntry)
+        .where(TreasuryEntry.country == country, TreasuryEntry.entry_date >= month_start)
+        .order_by(TreasuryEntry.entry_date.desc(), TreasuryEntry.id.desc())
+    ).all()
+
+    spending = sum(e.price for e in entries if e.kind == "spending")
+    gathering = sum(e.price for e in entries if e.kind == "gathering")
+
+    history_rows = session.exec(
+        select(
+            func.date_trunc("month", TreasuryEntry.entry_date).label("month"),
+            TreasuryEntry.kind,
+            func.sum(TreasuryEntry.price),
+        )
+        .where(TreasuryEntry.country == country)
+        .group_by("month", TreasuryEntry.kind)
+        .order_by("month")
+    ).all()
+
+    history_map = {}
+    for month, kind, total in history_rows:
+        key = month.strftime("%Y-%m")
+        row = history_map.setdefault(key, {"month": key, "spending": 0, "gathering": 0})
+        row[kind] = float(total)
+    history = [history_map[k] for k in sorted(history_map)]
+    for row in history:
+        row["net"] = row["gathering"] - row["spending"]
+
+    return {
+        "current_month": {
+            "month": month_start.strftime("%Y-%m"),
+            "spending": spending,
+            "gathering": gathering,
+            "net": gathering - spending,
+            "entries": [treasury_entry_out(e) for e in entries],
+        },
+        "history": history,
+    }
+
+
+@app.post("/treasury", status_code=201)
+def add_treasury_entry(data: TreasuryEntryCreate, session: Session = Depends(get_session)):
+    entry = TreasuryEntry.model_validate(data)
+    session.add(entry)
+    session.commit()
+    session.refresh(entry)
+    return treasury_entry_out(entry)
+
+
+@app.delete("/treasury/{entry_id}")
+def delete_treasury_entry(entry_id: int, session: Session = Depends(get_session)):
+    entry = session.get(TreasuryEntry, entry_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Entry not found")
+    session.delete(entry)
+    session.commit()
+    return {"status": "success"}
+
+
+# =====================================================================
+# ============================  BANKING  ===============================
+# =====================================================================
+
+@app.get("/banking/accounts")
+def get_bank_accounts(country: str, session: Session = Depends(get_session)):
+    accounts = session.exec(
+        select(BankAccount).where(BankAccount.country == country).order_by(BankAccount.id)
+    ).all()
+    return accounts
+
+
+@app.post("/banking/accounts", status_code=201)
+def add_bank_account(data: BankAccount, session: Session = Depends(get_session)):
+    account = BankAccount(**data.model_dump(exclude={"id"}))
+    session.add(account)
+    session.commit()
+    session.refresh(account)
+    return account
+
+
+@app.get("/banking/accounts/{account_id}/transactions")
+def get_bank_transactions(account_id: int, session: Session = Depends(get_session)):
+    return session.exec(
+        select(BankTransaction)
+        .where(BankTransaction.account_id == account_id)
+        .order_by(BankTransaction.entry_date.desc(), BankTransaction.id.desc())
+    ).all()
+
+
+@app.post("/banking/accounts/{account_id}/transactions", status_code=201)
+def add_bank_transaction(
+    account_id: int, data: BankTransactionCreate, session: Session = Depends(get_session)
+):
+    account = session.get(BankAccount, account_id)
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+
+    tx = BankTransaction.model_validate({**data.model_dump(), "account_id": account_id})
+    account.balance = account.balance + tx.amount
+    session.add(tx)
+    session.add(account)
+    session.commit()
+    session.refresh(tx)
+    return tx
+
+
+@app.get("/banking/loans")
+def get_bank_loans(country: str, session: Session = Depends(get_session)):
+    account_ids = session.exec(
+        select(BankAccount.id).where(BankAccount.country == country)
+    ).all()
+    if not account_ids:
+        return []
+    return session.exec(
+        select(BankLoan).where(BankLoan.account_id.in_(account_ids)).order_by(BankLoan.id)
+    ).all()
+
+
+@app.post("/banking/loans", status_code=201)
+def add_bank_loan(data: BankLoanCreate, session: Session = Depends(get_session)):
+    loan = BankLoan.model_validate(data)
+    session.add(loan)
+    session.commit()
+    session.refresh(loan)
+    return loan
+
+
+# =====================================================================
+# ============================  INVOICES  ==============================
+# =====================================================================
+
+def make_invoice_number(session: Session, country: str, doc_type: str) -> str:
+    prefix = "FAC" if doc_type == "facture" else "REC"
+    country_code = "TN" if country == "tunisia" else "LY" if country == "libya" else country.upper()[:2]
+    year = date.today().year
+    count = session.exec(
+        select(func.count()).select_from(Invoice).where(
+            Invoice.country == country, Invoice.doc_type == doc_type,
+            func.extract("year", Invoice.issue_date) == year,
+        )
+    ).one()
+    return f"{prefix}-{country_code}-{year}-{count + 1:04d}"
+
+
+def invoice_out(inv: Invoice) -> dict:
+    data = inv.model_dump()
+    data["issue_date"] = inv.issue_date.isoformat()
+    data["created_at"] = inv.created_at.isoformat()
+    data["items"] = json.loads(inv.items_json or "[]")
+    data["pdf_url"] = f"{PUBLIC_API_PREFIX}/invoices/{inv.id}/pdf"
+    return data
+
+
+@app.get("/invoices")
+def list_invoices(country: str, session: Session = Depends(get_session)):
+    invoices = session.exec(
+        select(Invoice).where(Invoice.country == country).order_by(Invoice.id.desc())
+    ).all()
+    return [invoice_out(i) for i in invoices]
+
+
+@app.post("/invoices", status_code=201)
+def create_invoice(data: InvoiceCreate, session: Session = Depends(get_session)):
+    number = make_invoice_number(session, data.country, data.doc_type)
+    payload = data.model_dump(exclude={"items"})
+    payload["items_json"] = json.dumps([i.model_dump() for i in data.items])
+    invoice = Invoice(**payload, number=number)
+    session.add(invoice)
+    session.commit()
+    session.refresh(invoice)
+    return invoice_out(invoice)
+
+
+@app.get("/invoices/{invoice_id}/pdf")
+def get_invoice_pdf(invoice_id: int, session: Session = Depends(get_session)):
+    invoice = session.get(Invoice, invoice_id)
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    try:
+        pdf_path = generate_invoice_pdf(invoice)
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Could not generate PDF: {e}")
+    return FileResponse(pdf_path, media_type="application/pdf", filename=f"{invoice.number}.pdf")
+
+
+# =====================================================================
+# ===========================  REQUESTS  ================================
+# =====================================================================
+
+@app.get("/agency-requests")
+def list_agency_requests(session: Session = Depends(get_session)):
+    return session.exec(select(AgencyRequest).order_by(AgencyRequest.id.desc())).all()
+
+
+@app.post("/agency-requests", status_code=201)
+def create_agency_request(data: AgencyRequestCreate, session: Session = Depends(get_session)):
+    req = AgencyRequest.model_validate(data)
+    session.add(req)
+    session.commit()
+    session.refresh(req)
+    return req
+
+
+@app.delete("/agency-requests/{request_id}")
+def delete_agency_request(request_id: int, session: Session = Depends(get_session)):
+    req = session.get(AgencyRequest, request_id)
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
+    session.delete(req)
+    session.commit()
+    return {"status": "success"}
+
+
+@app.get("/employee-requests")
+def list_employee_requests(session: Session = Depends(get_session)):
+    return session.exec(select(EmployeeRequest).order_by(EmployeeRequest.id.desc())).all()
+
+
+@app.post("/employee-requests", status_code=201)
+def create_employee_request(data: EmployeeRequestCreate, session: Session = Depends(get_session)):
+    req = EmployeeRequest.model_validate(data)
+    session.add(req)
+    session.commit()
+    session.refresh(req)
+    return req
+
+
+@app.delete("/employee-requests/{request_id}")
+def delete_employee_request(request_id: int, session: Session = Depends(get_session)):
+    req = session.get(EmployeeRequest, request_id)
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
+    session.delete(req)
+    session.commit()
+    return {"status": "success"}
+
+
+# =====================================================================
+# ============================  PAYROLL  ================================
+# =====================================================================
+
+@app.post("/payroll/parse-pointage")
+async def parse_pointage_file(file: UploadFile = File(...)):
+    raw = await file.read()
+    try:
+        rows = parse_pointage(raw)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Could not read the Excel file: {e}")
+    return rows
+
+
+@app.get("/payroll/payslips")
+def list_payslips(session: Session = Depends(get_session)):
+    return session.exec(select(Payslip).order_by(Payslip.id.desc())).all()
+
+
+@app.post("/payroll/payslips", status_code=201)
+def create_payslip(data: PayslipCreate, session: Session = Depends(get_session)):
+    payslip = Payslip(**data.model_dump(), gross_total=round(data.hours * data.hourly_rate, 3))
+    session.add(payslip)
+    session.commit()
+    session.refresh(payslip)
+    return payslip
+
+
+@app.get("/payroll/payslips/{payslip_id}/pdf")
+def get_payslip_pdf(payslip_id: int, session: Session = Depends(get_session)):
+    payslip = session.get(Payslip, payslip_id)
+    if not payslip:
+        raise HTTPException(status_code=404, detail="Payslip not found")
+    try:
+        pdf_path = generate_payslip_pdf(payslip)
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Could not generate PDF: {e}")
+    return FileResponse(pdf_path, media_type="application/pdf", filename=f"payslip-{payslip.id}.pdf")
+
 
 if __name__ == "__main__":
     import uvicorn

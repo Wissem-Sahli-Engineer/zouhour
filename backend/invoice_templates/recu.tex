@@ -1,0 +1,154 @@
+% ============================================================
+%  وصل دفع — شركة تونس للإستشارات والمساعدة (TCA ltd.)
+%  Compile with XeLaTeX:   xelatex receipt_REC0753-2026.tex
+%  Needs the Amiri font (free: https://www.amirifont.org)
+%  Optional: put your logo as logo.png next to this file.
+%  Optional: put your signature as signature.png next to this file.
+% ============================================================
+\documentclass[a4paper]{article}
+\usepackage[margin=0pt]{geometry}
+\usepackage{fontspec}
+\usepackage[bidi=default]{babel}
+\babelprovide[import]{arabic}
+\babelprovide[main,import]{english}
+\babelfont{rm}[
+  Path = ./,
+  Extension = .ttf,
+  UprightFont = *-Regular,
+  BoldFont = *-Bold,
+  ItalicFont = *-Italic,
+  BoldItalicFont = *-BoldItalic,
+]{Amiri}
+\babelfont{sf}{Arial}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\pagestyle{empty}
+
+% ---------- Colours ----------
+\definecolor{navy}{HTML}{1F3A5F}
+\definecolor{gold}{HTML}{B8860B}
+\definecolor{paidgreen}{HTML}{228B22}
+\definecolor{lightbg}{HTML}{F4F7F9}
+\definecolor{rowline}{HTML}{CCCCCC}
+\definecolor{stampblue}{HTML}{1A5BB5}
+
+% ---------- Receipt data (edit these) ----------
+\newcommand\ReceiptNo{%%RECEIPT_NO%%}
+\newcommand\ReceiptDate{%%RECEIPT_DATE%%}
+\newcommand\ClientName{%%CLIENT_NAME%%}
+\newcommand\ClientPassport{%%CLIENT_PASSPORT%%}
+\newcommand\ServiceType{%%SERVICE_TYPE%%}
+\newcommand\AmountDue{%%AMOUNT_DUE%%}
+\newcommand\AmountPaid{%%AMOUNT_PAID%%}
+\newcommand\AmountLeft{%%AMOUNT_LEFT%%}
+\newcommand\StatusText{%%STATUS_TEXT%%}
+
+% ---------- Helpers ----------
+\newcommand\ar[1]{\foreignlanguage{arabic}{#1}}   % Arabic (right-to-left) text
+% position in cm measured from the top-left corner of the page
+\newcommand\at[2]{([xshift=(#1)*1cm,yshift=-(#2)*1cm]current page.north west)}
+
+\begin{document}
+\null
+\begin{tikzpicture}[remember picture,overlay]
+
+% ================= HEADER =================
+\fill[navy] \at{0}{0} rectangle \at{21}{4.5};
+
+% Title block (left)
+\node[anchor=north west,text=gold,font=\fontsize{30}{34}\selectfont] at \at{1}{0.5} {\ar{وصل دفع}};
+\node[anchor=north west,text=white,align=left,font=\large] at \at{1}{1.85}
+  {\ar{رقم: \ReceiptNo}\\ \ar{التاريخ: \ReceiptDate}};
+
+% Logo (right)
+\IfFileExists{logo.png}{%
+  \node at \at{18.75}{2.05} {\includegraphics[width=3cm,height=3cm,keepaspectratio]{logo.png}};
+}{%
+  \fill[gold,rounded corners=4pt] \at{17.75}{1.0} rectangle \at{19.75}{3.1};
+  \node[text=white,font=\sffamily\small] at \at{18.75}{2.05} {TCA ltd.};
+}
+
+% Company name
+\node[anchor=north east,text=gold,font=\Large] at \at{16.95}{1.72} {\ar{شركة تونس للإستشارات والمساعدة}};
+\node[anchor=north east,text=gold,font=\sffamily] at \at{16.5}{2.5} {TCA ltd.};
+
+% ================= GOLD INFO BAND =================
+\fill[gold] \at{0}{4.5} rectangle \at{21}{6.3};
+\node[anchor=north east,text=white,align=right,font=\footnotesize] at \at{20.1}{4.6} {%
+  \ar{شركة تونس للإستشارات والمساعدة | رأس المال: 5000 دينار}\\
+  \ar{السجل التجاري: B0140682015 | المعرف الجبائي: 1389792/E}\\
+  \ar{الحساب البنكي: 04069154003633490208} | Attijari Bank | M. Khaireddine Bachi\\
+  \ar{الهاتف:} +216 28 846 888 - +216 29 549 995};
+
+% ================= INFO BOXES =================
+% Receipt info (right)
+\filldraw[fill=lightbg,draw=gold,rounded corners=8pt] \at{10.5}{7.0} rectangle \at{20}{10.0};
+\node[anchor=north east,text=gold,font=\large] at \at{19.6}{7.2} {\ar{معلومات الوصل}};
+\node[anchor=north east,align=right] at \at{19.6}{8.0}
+  {\ar{رقم الوصل: \ReceiptNo}\\[4pt] \ar{التاريخ: \ReceiptDate}};
+
+% Client info (left)
+\filldraw[fill=lightbg,draw=gold,rounded corners=8pt] \at{1}{7.0} rectangle \at{10}{10.0};
+\node[anchor=north east,text=gold,font=\large] at \at{9.6}{7.2} {\ar{معلومات العميل}};
+\node[anchor=north east,align=right] at \at{9.6}{8.0}
+  {\ar{الاسم: \ClientName}\\[2pt] \ar{جواز السفر: \ClientPassport}\\[2pt] \ar{نوع الخدمة: \ServiceType}};
+
+% ================= STATUS BADGE =================
+\fill[paidgreen,rounded corners=5pt] \at{8}{10.8} rectangle \at{13}{11.6};
+\node[text=white] at \at{10.5}{11.2} {\ar{\StatusText}};
+
+% ================= FINANCIAL TABLE =================
+\node[anchor=east,text=gold,font=\Large] at \at{19.6}{12.1} {\ar{التفاصيل المالية}};
+
+% header row
+\fill[navy] \at{1.5}{12.55} rectangle \at{19.5}{13.75};
+\node[anchor=east,text=white,font=\large] at \at{19.1}{13.15} {\ar{البيان}};
+\node[anchor=east,text=white,font=\large] at \at{7.1}{13.15} {\ar{المبلغ}};
+
+% body rows
+\foreach \y/\lbl/\amt in {13.75/المبلغ المطلوب/\AmountDue,
+                          14.95/المبلغ المدفوع/\AmountPaid,
+                          16.15/المبلغ المتبقي/\AmountLeft}{
+  \draw[rowline] \at{1.5}{\y} rectangle \at{19.5}{\y+1.2};
+  \draw[rowline] \at{7.5}{\y} -- \at{7.5}{\y+1.2};
+  \node[anchor=east,font=\large] at \at{19.1}{\y+0.6} {\ar{\lbl}};
+  \node[anchor=west,font=\large] at \at{1.9}{\y+0.6} {\amt\ TND};
+}
+
+% thank-you strip
+\fill[lightbg,rounded corners=6pt] \at{1.5}{17.35} rectangle \at{19.5}{18.5};
+\fill[lightbg] \at{1.5}{17.35} rectangle \at{19.5}{17.8};
+\node[text=navy] at \at{10.5}{17.9} {\ar{نشكركم على ثقتكم بشركة تونس للإستشارات والمساعدة}};
+
+% ================= SIGNATURES =================
+% Client signature box
+\draw[gray!60,dashed,rounded corners=8pt] \at{1.5}{19.1} rectangle \at{8.6}{22.6};
+\node[text=gray,font=\small] at \at{5.05}{22.2} {\ar{توقيع العميل}};
+
+% Company stamp + signature box
+\draw[gray!60,dashed,rounded corners=8pt] \at{12.4}{19.1} rectangle \at{19.5}{22.6};
+% Stamp
+\node[draw=stampblue,line width=0.8pt,text=stampblue,align=center,
+      font=\sffamily\bfseries,inner sep=3pt] at \at{15.95}{19.95} {%
+  {\footnotesize Tunisie Conseil et Assistance TCA}\\[-1pt]
+  {\tiny 1er, Merveille du Lac, Cte Les Pins L2 1053}\\[-2pt]
+  {\tiny Tél: 25846888 / 29549995}\\[-2pt]
+  {\tiny MF:1389792/E/A/M/000}};
+% Signature (uses signature.png if present, otherwise a blank line)
+\IfFileExists{signature.png}{%
+  \node at \at{15.95}{21.35} {\includegraphics[height=1.1cm,width=5cm,keepaspectratio]{signature.png}};
+}{%
+  \draw[gray] \at{14.2}{21.7} -- \at{17.7}{21.7};
+}
+\node[text=gray,font=\small] at \at{15.95}{22.2} {\ar{ختم وتوقيع الشركة}};
+
+% ================= FOOTER =================
+\fill[navy] \at{0}{27.9} rectangle \at{21}{29.7};
+\node[text=white,font=\sffamily\small] at \at{10.5}{28.5}
+  {85 rue de Palestine, Tunis 1002 | +216 28 846 888 | contact@tunis-consulting.com};
+\node[text=white,font=\sffamily\small] at \at{10.5}{29.1} {www.tunis-consulting.com};
+
+\end{tikzpicture}
+
+\end{document}

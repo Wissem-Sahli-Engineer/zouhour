@@ -261,11 +261,14 @@
   filter: brightness(0.95);
 }
 
-.chat-fab {
+.chat-fab-wrap {
   position: fixed;
   bottom: 24px;
   right: 24px;
   z-index: 40;
+}
+
+.chat-fab {
   display: flex;
   height: 56px;
   width: 56px;

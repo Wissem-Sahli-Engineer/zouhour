@@ -6,7 +6,8 @@ import { DashboardPage } from "../features/dashboard/DashboardPage";
 import { StatsPage } from "../features/stats/StatsPage";
 import { ClientsPage } from "../features/clients/ClientsPage";
 import { ClientDetailPage } from "../features/clients/ClientDetailPage";
-import { ScanPage } from "../features/clients/ScanPage";
+import { AddClientPage } from "../features/clients/AddClientPage";
+import { EditClientPage } from "../features/clients/EditClientPage";
 import { AccountingPage } from "../features/accounting/AccountingPage";
 import { MyRequestsPage } from "../features/requests/MyRequestsPage";
 import { EmployeeRequestsPage } from "../features/requests/EmployeeRequestsPage";
@@ -24,8 +25,9 @@ export function AppRouter() {
             <Route path="/" element={<DashboardPage />} />
             <Route path="/stats" element={<StatsPage />} />
             <Route path="/clients" element={<ClientsPage />} />
-            <Route path="/clients/scan" element={<ScanPage />} />
+            <Route path="/clients/add" element={<AddClientPage />} />
             <Route path="/clients/:id" element={<ClientDetailPage />} />
+            <Route path="/clients/:id/edit" element={<EditClientPage />} />
             <Route path="/accounting" element={<Navigate to="/accounting/tunisia" replace />} />
             <Route path="/accounting/tunisia" element={<AccountingPage defaultCountry="tunisia" />} />
             <Route path="/accounting/libya" element={<AccountingPage defaultCountry="libya" />} />

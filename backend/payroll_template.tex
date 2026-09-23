@@ -1,0 +1,64 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[scaled]{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage[a4paper,top=2.5cm,bottom=2.5cm,left=2cm,right=2cm]{geometry}
+\usepackage[table]{xcolor}
+\usepackage{array,graphicx}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+
+\definecolor{navy}{HTML}{1F3A5F}
+\definecolor{gold}{HTML}{B8860B}
+\definecolor{lightbg}{HTML}{F4F7F9}
+
+\newcommand{\employeeName}{%%EMPLOYEE_NAME%%}
+\newcommand{\periodLabel}{%%PERIOD_LABEL%%}
+\newcommand{\hoursWorked}{%%HOURS%%}
+\newcommand{\hourlyRate}{%%HOURLY_RATE%%}
+\newcommand{\grossTotal}{%%GROSS_TOTAL%%}
+\newcommand{\currencyLabel}{%%CURRENCY%%}
+\newcommand{\payslipNo}{%%PAYSLIP_NO%%}
+\newcommand{\issueDate}{%%ISSUE_DATE%%}
+
+\begin{document}
+
+{\color{navy}\bfseries\Large Tunisie Conseil et Assistance TCA Sarl}\\[2pt]
+{\color{gold}\small Fiche de paie}
+
+\vspace{0.8cm}
+\noindent\textcolor{gold}{\rule{\linewidth}{1.2pt}}
+\vspace{0.6cm}
+
+\begin{tabular}{@{}ll@{}}
+\textbf{Employ\'e} & \employeeName \\[4pt]
+\textbf{P\'eriode} & \periodLabel \\[4pt]
+\textbf{Num\'ero} & \payslipNo \\[4pt]
+\textbf{Date d'\'emission} & \issueDate \\
+\end{tabular}
+
+\vspace{1cm}
+
+\renewcommand{\arraystretch}{1.8}
+\begin{tabular}{|>{\columncolor{navy}\color{white}\bfseries}p{7cm}|>{\columncolor{navy}\color{white}\bfseries}p{7cm}|}
+\hline
+D\'esignation & Montant \\
+\hline
+\rowcolor{lightbg} Heures travaill\'ees & \hoursWorked ~h \\
+\hline
+\rowcolor{lightbg} Taux horaire & \hourlyRate ~\currencyLabel /h \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+\hfill
+\colorbox{gold}{\parbox{7cm}{\centering\color{white}\bfseries\large
+  Salaire brut : \grossTotal ~\currencyLabel
+}}
+
+\vspace{2cm}
+\noindent\textcolor{gray}{\small Ce document est g\'en\'er\'e automatiquement \`a partir du fichier de pointage.}
+
+\end{document}

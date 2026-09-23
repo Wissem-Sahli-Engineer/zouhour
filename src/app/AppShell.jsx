@@ -2,13 +2,15 @@ import { useEffect, useRef } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { ChatbotPanel } from "../features/chatbot/ChatbotPanel";
 import { ChatFab } from "../components/ChatFab";
+import { NotificationBell } from "../components/NotificationBell";
+import Magnet from "../components/ui/magnet";
 import {
-  IconBell,
   IconBot,
   IconChart,
   IconClipboard,
   IconGrid,
   IconLedger,
+  IconLogout,
   IconMenu,
   IconPeople,
   IconSearch,
@@ -21,15 +23,17 @@ import { useAuth } from "../store/auth";
 import { useUi } from "../store/ui";
 import { RouteTransition } from "./RouteTransition";
 
-const NAV = [
+const NAV_ACCOUNT = [
   { to: "/", label: "Dashboard", icon: IconGrid, end: true },
   { to: "/stats", label: "Stats", icon: IconChart },
   { to: "/clients", label: "Clients", icon: IconPeople },
   { to: "/accounting/tunisia", label: "Accounting TN", icon: IconLedger },
   { to: "/accounting/libya", label: "Accounting LY", icon: IconLedger },
+];
+
+const NAV_HR = [
   { to: "/MyRequests", label: "My Requests", icon: IconClipboard },
   { to: "/EmployeeRequests", label: "Employee Requests", icon: IconUsersGear },
-
 ];
 
 export function AppShell() {
@@ -43,7 +47,6 @@ export function AppShell() {
   const toggleSidebar = useUi((s) => s.toggleSidebar);
   const search = useUi((s) => s.search);
   const setSearch = useUi((s) => s.setSearch);
-  const notifications = useUi((s) => s.notifications);
 
   useGSAP(
     (context, contextSafe) => {
@@ -81,6 +84,10 @@ export function AppShell() {
     requestAnimationFrame(() => ScrollTrigger.refresh());
   }, [location.pathname]);
 
+  const isAdmin = user?.role === "Admin";
+  const navAccount = isAdmin ? NAV_ACCOUNT : NAV_ACCOUNT.slice(0, 3);
+  const navHr = isAdmin ? NAV_HR : NAV_HR.filter((item) => item.to === "/EmployeeRequests");
+
   const initials = (user?.name || "AG")
     .split(" ")
     .filter(Boolean)
@@ -110,8 +117,10 @@ export function AppShell() {
           </div>
         </div>
 
+        <hr className="sidebar-divider" />
+
         <nav className="sidebar-nav">
-          {NAV.map((item) => {
+          {navAccount.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink
@@ -131,12 +140,36 @@ export function AppShell() {
             );
           })}
 
+          <hr className="sidebar-divider" />
+
+          {navHr.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                title={item.label}
+                className={({ isActive }) =>
+                  `nav-link ${isActive ? "active" : ""}`
+                }
+              >
+                <Icon size={18} style={{ flexShrink: 0 }} />
+                <span data-label style={{ whiteSpace: "nowrap" }}>
+                  {item.label}
+                </span>
+              </NavLink>
+            );
+          })}
+
+          <hr className="sidebar-divider" />
+
           <button
             type="button"
             onClick={() => navigate("/chatbot")}
             className="nav-link"
             title="AI Chatbot"
-            style={{ marginTop: "4px", width: "100%", textAlign: "left" }}
+            style={{ width: "100%", textAlign: "left" }}
           >
             <IconBot size={18} style={{ flexShrink: 0 }} />
             <span data-label style={{ whiteSpace: "nowrap" }}>
@@ -153,14 +186,16 @@ export function AppShell() {
       <div className="app-main-column">
         <header className="app-header">
           <div className="header-left">
-            <button
-              type="button"
-              onClick={toggleSidebar}
-              className="icon-btn"
-              aria-label="Toggle sidebar"
-            >
-              <IconMenu />
-            </button>
+            <Magnet padding={22} magnetStrength={14}>
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                className="icon-btn"
+                aria-label="Toggle sidebar"
+              >
+                <IconMenu />
+              </button>
+            </Magnet>
             <label className="search-bar">
               <span className="search-bar-icon">
                 <IconSearch size={16} />
@@ -175,29 +210,7 @@ export function AppShell() {
           </div>
 
           <div className="header-right">
-            <div style={{ position: "relative" }}>
-              <button
-                type="button"
-                className="icon-btn"
-                aria-label="Notifications"
-              >
-                <IconBell />
-              </button>
-              <span
-                style={{
-                  position: "absolute",
-                  right: "8px",
-                  top: "8px",
-                  width: "6px",
-                  height: "6px",
-                  borderRadius: "50%",
-                  backgroundColor: "var(--color-accent-orange)",
-                }}
-              />
-              <div className="sr-only">
-                {notifications.map((n) => n.text).join(", ")}
-              </div>
-            </div>
+            <NotificationBell />
             <div className="user-badge">
               <div className="avatar-circle">
                 {initials || "AG"}
@@ -206,16 +219,19 @@ export function AppShell() {
                 <p className="user-name">{user?.name || "Agent"}</p>
                 <p className="user-role">{user?.role}</p>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  logout();
-                  navigate("/login");
-                }}
-                className="btn-logout"
-              >
-                Logout
-              </button>
+              <Magnet padding={22} magnetStrength={14}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    logout();
+                    navigate("/login");
+                  }}
+                  className="btn-logout"
+                >
+                  <IconLogout size={14} />
+                  Logout
+                </button>
+              </Magnet>
             </div>
           </div>
         </header>

@@ -1,5 +1,6 @@
 export const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || "21600000000";
 export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`;
 
-export const OLLAMA_BASE_URL = import.meta.env.VITE_OLLAMA_BASE_URL || "http://localhost:11434";
-export const OLLAMA_MODEL = import.meta.env.VITE_OLLAMA_MODEL || "qwen2.5";
+// Proxied by Vite to the FastAPI backend's /chat route (see vite.config.js)
+export const CHAT_API_URL = "/api/chat";
+export const CHAT_MODEL_LABEL = "Qwen2.5-VL 3B";

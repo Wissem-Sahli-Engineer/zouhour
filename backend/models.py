@@ -18,6 +18,22 @@ class ClientBase(SQLModel):
     date_of_expiry: date | None = None
     issued_by: str | None = Field(default=None, max_length=100)
 
+    # Contact & business info
+    phone: str | None = Field(default=None, max_length=30)
+    email: str | None = Field(default=None, max_length=150)
+    entreprise_name: str | None = Field(default=None, max_length=150)
+    code_fiscal: str | None = Field(default=None, max_length=50)
+
+    # Visa / relation
+    visa_status: str | None = Field(default=None, max_length=50)
+    visa_type: str | None = Field(default=None, max_length=50)
+    client_relation: str | None = Field(default=None, max_length=50)
+
+    # Billing
+    prix_dossier: float | None = None
+    paiement_type: str | None = Field(default=None, max_length=50)
+    currency: str | None = Field(default=None, max_length=10)
+
 
 class Client(ClientBase, table=True):
     __tablename__ = "clients"
@@ -28,9 +44,9 @@ class Client(ClientBase, table=True):
 
 
 class ClientCreate(ClientBase):
-    """Body of POST /clients, as sent by the Scan page."""
+    """Body of POST /clients, as sent by the Add client page."""
 
-    user_photo: str | None = None  # data:image/...;base64,... from /extract
+    user_photo: str | None = None  # data:image/...;base64,... manually uploaded client photo
 
     @field_validator("*", mode="before")
     @classmethod
@@ -44,3 +60,174 @@ class ClientCreate(ClientBase):
     @classmethod
     def normalize_passport(cls, v):
         return v.upper() if v else v
+
+
+class ClientFile(SQLModel, table=True):
+    __tablename__ = "client_files"
+
+    id: int | None = Field(default=None, primary_key=True)
+    client_id: int = Field(foreign_key="clients.id", index=True)
+    filename: str = Field(max_length=255)
+    path: str = Field(max_length=255)
+    content_type: str | None = Field(default=None, max_length=100)
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class TreasuryEntryBase(SQLModel):
+    country: str = Field(max_length=20, index=True)
+    kind: str = Field(max_length=10)  # "spending" | "gathering"
+    product_name: str = Field(max_length=150)
+    price: float
+    entry_date: date
+    recorded_by: str | None = Field(default=None, max_length=100)  # who wrote the entry
+    counterparty: str | None = Field(default=None, max_length=150)  # who they dealt with
+
+
+class TreasuryEntry(TreasuryEntryBase, table=True):
+    __tablename__ = "treasury_entries"
+
+    id: int | None = Field(default=None, primary_key=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class TreasuryEntryCreate(TreasuryEntryBase):
+    pass
+
+
+class BankAccount(SQLModel, table=True):
+    __tablename__ = "bank_accounts"
+
+    id: int | None = Field(default=None, primary_key=True)
+    country: str = Field(max_length=20, index=True)
+    name: str = Field(max_length=150)
+    currency: str = Field(max_length=10)
+    balance: float = 0
+
+
+class BankTransactionBase(SQLModel):
+    account_id: int = Field(foreign_key="bank_accounts.id", index=True)
+    label: str = Field(max_length=150)
+    amount: float  # positive = deposit, negative = withdrawal
+    entry_date: date
+
+
+class BankTransaction(BankTransactionBase, table=True):
+    __tablename__ = "bank_transactions"
+
+    id: int | None = Field(default=None, primary_key=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class BankTransactionCreate(BankTransactionBase):
+    pass
+
+
+class BankLoanBase(SQLModel):
+    account_id: int | None = Field(default=None, foreign_key="bank_accounts.id")
+    lender: str = Field(max_length=150)
+    principal: float
+    remaining: float
+    monthly_payment: float | None = None
+    start_date: date
+    status: str = Field(default="active", max_length=20)  # active | paid | defaulted
+
+
+class BankLoan(BankLoanBase, table=True):
+    __tablename__ = "bank_loans"
+
+    id: int | None = Field(default=None, primary_key=True)
+
+
+class BankLoanCreate(BankLoanBase):
+    pass
+
+
+class InvoiceItem(SQLModel):
+    designation: str
+    quantity: float
+    unit_price: float
+
+
+class InvoiceBase(SQLModel):
+    country: str = Field(max_length=20, index=True)
+    doc_type: str = Field(max_length=10)  # "facture" | "recu"
+    client_id: int | None = Field(default=None, foreign_key="clients.id")
+    client_name: str = Field(max_length=150)
+    client_passport: str | None = Field(default=None, max_length=30)
+    client_mf: str | None = Field(default=None, max_length=50)  # matricule fiscal
+    company_name: str | None = Field(default=None, max_length=150)
+    service_type: str | None = Field(default=None, max_length=100)  # recu only
+    issue_date: date
+    tva_rate: float = 0.19
+    timbre: float = 1
+    amount_paid: float = 0
+    items_json: str = "[]"  # JSON-encoded list[InvoiceItem]; facture only
+
+
+class Invoice(InvoiceBase, table=True):
+    __tablename__ = "invoices"
+
+    id: int | None = Field(default=None, primary_key=True)
+    number: str = Field(max_length=30, unique=True, index=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class InvoiceCreate(InvoiceBase):
+    items: list[InvoiceItem] = []
+
+
+class AgencyRequestBase(SQLModel):
+    name: str = Field(max_length=150)
+    description: str
+    submitted_date: date
+    status: str = Field(default="pending", max_length=20)  # pending | approved | rejected
+
+
+class AgencyRequest(AgencyRequestBase, table=True):
+    __tablename__ = "agency_requests"
+
+    id: int | None = Field(default=None, primary_key=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class AgencyRequestCreate(AgencyRequestBase):
+    pass
+
+
+class EmployeeRequestBase(SQLModel):
+    category: str = Field(max_length=30)  # vacations | salary-advances | loans
+    employee_name: str = Field(max_length=150)
+    detail: str
+    submitted_date: date
+    status: str = Field(default="pending", max_length=20)
+
+
+class EmployeeRequest(EmployeeRequestBase, table=True):
+    __tablename__ = "employee_requests"
+
+    id: int | None = Field(default=None, primary_key=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class EmployeeRequestCreate(EmployeeRequestBase):
+    pass
+
+
+class PayslipBase(SQLModel):
+    employee_name: str = Field(max_length=150)
+    period_label: str = Field(max_length=50)  # e.g. "September 2026"
+    hours: float
+    hourly_rate: float
+    currency: str = Field(default="TND", max_length=10)
+
+
+class Payslip(PayslipBase, table=True):
+    __tablename__ = "payslips"
+
+    id: int | None = Field(default=None, primary_key=True)
+    gross_total: float
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class PayslipCreate(PayslipBase):
+    pass

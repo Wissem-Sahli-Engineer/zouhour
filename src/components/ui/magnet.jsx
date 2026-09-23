@@ -9,6 +9,7 @@ const Magnet = ({
   inactiveTransition = 'transform 0.5s ease-in-out',
   wrapperClassName = '',
   innerClassName = '',
+  block = false,
   ...props
 }) => {
   const [isActive, setIsActive] = useState(false);
@@ -55,7 +56,7 @@ const Magnet = ({
     <div
       ref={magnetRef}
       className={wrapperClassName}
-      style={{ position: 'relative', display: 'inline-block' }}
+      style={{ position: 'relative', display: block ? 'block' : 'inline-block', width: block ? '100%' : undefined }}
       {...props}
     >
       <div

@@ -2,9 +2,11 @@ import { useRef, useState } from "react";
 import { IconClose, IconSend } from "../../components/ui/Icons";
 import { DURATION, EASE, gsap, useGSAP } from "../../lib/gsap";
 import { useUi } from "../../store/ui";
+import { CHAT_API_URL } from "../../lib/config";
+import { captureScreenshot } from "../../lib/screenCapture";
 
 const STARTER = [
-  { from: "bot", text: "I can pull case status, missing documents, and invoice balances. Backend wiring comes later — this is the shell." },
+  { role: "assistant", content: "I can pull case status, missing documents, and invoice balances — and read your passport scans. Turn on Live helper to attach a snapshot of this window with your next message." },
 ];
 
 export function ChatbotPanel() {
@@ -13,6 +15,8 @@ export function ChatbotPanel() {
   const panelRef = useRef(null);
   const [messages, setMessages] = useState(STARTER);
   const [draft, setDraft] = useState("");
+  const [liveHelper, setLiveHelper] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useGSAP(
     () => {
@@ -30,16 +34,41 @@ export function ChatbotPanel() {
     { dependencies: [open] }
   );
 
-  const send = (e) => {
+  const send = async (e) => {
     e.preventDefault();
     const text = draft.trim();
-    if (!text) return;
-    setMessages((m) => [
-      ...m,
-      { from: "you", text },
-      { from: "bot", text: "Noted. I’ll connect this to the agency knowledge base once the API is ready." },
-    ]);
+    if (!text || loading) return;
+
+    let image;
+    let captureError;
+    if (liveHelper) {
+      try {
+        image = await captureScreenshot();
+      } catch (err) {
+        captureError = err.message;
+      }
+    }
+
+    const next = [...messages, { role: "user", content: text }];
+    setMessages(next);
     setDraft("");
+    setLoading(true);
+
+    try {
+      const res = await fetch(CHAT_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: next, image }),
+      });
+      if (!res.ok) throw new Error(`request failed (${res.status})`);
+      const data = await res.json();
+      const prefix = captureError ? `[Screen share failed: ${captureError} — replied without it]\n` : "";
+      setMessages((m) => [...m, { role: "assistant", content: prefix + (data.reply || "No response from the model.") }]);
+    } catch (err) {
+      setMessages((m) => [...m, { role: "assistant", content: `Couldn't reach the assistant (${err.message}).` }]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -51,7 +80,7 @@ export function ChatbotPanel() {
         right: "24px",
         zIndex: 40,
         display: "flex",
-        height: "min(520px, 70vh)",
+        height: "min(560px, 70vh)",
         width: "380px",
         transform: "translateX(420px)",
         flexDirection: "column",
@@ -83,6 +112,28 @@ export function ChatbotPanel() {
         </button>
       </div>
 
+      <label
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "8px",
+          padding: "10px 20px",
+          borderBottom: "1px solid var(--color-line)",
+          fontSize: "12.5px",
+          fontWeight: "600",
+          color: "var(--color-muted)",
+          cursor: "pointer",
+        }}
+      >
+        <span>Live helper — capture this window with each message</span>
+        <input
+          type="checkbox"
+          checked={liveHelper}
+          onChange={(e) => setLiveHelper(e.target.checked)}
+        />
+      </label>
+
       <div
         style={{
           flex: 1,
@@ -102,14 +153,29 @@ export function ChatbotPanel() {
               padding: "10px 14px",
               fontSize: "13px",
               lineHeight: "1.45",
-              backgroundColor: m.from === "bot" ? "var(--color-surface)" : "var(--color-ink)",
-              color: m.from === "bot" ? "var(--color-ink)" : "var(--color-white)",
-              marginLeft: m.from === "bot" ? 0 : "auto",
+              backgroundColor: m.role === "assistant" ? "var(--color-surface)" : "var(--color-ink)",
+              color: m.role === "assistant" ? "var(--color-ink)" : "var(--color-white)",
+              marginLeft: m.role === "assistant" ? 0 : "auto",
+              whiteSpace: "pre-wrap",
             }}
           >
-            {m.text}
+            {m.content}
           </div>
         ))}
+        {loading ? (
+          <div
+            style={{
+              maxWidth: "85%",
+              borderRadius: "14px",
+              padding: "10px 14px",
+              fontSize: "13px",
+              backgroundColor: "var(--color-surface)",
+              color: "var(--color-muted)",
+            }}
+          >
+            Thinking…
+          </div>
+        ) : null}
       </div>
 
       <form
@@ -133,6 +199,7 @@ export function ChatbotPanel() {
           className="btn btn-brand"
           style={{ width: "auto", padding: "10px 14px" }}
           aria-label="Send"
+          disabled={loading}
         >
           <IconSend />
         </button>

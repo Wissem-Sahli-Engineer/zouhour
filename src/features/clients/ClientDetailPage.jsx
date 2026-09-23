@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { FALLBACK_CLIENTS, enrich } from "./mock";
+import Magnet from "../../components/ui/magnet";
 
 const STATUS_TONE = {
   paid: "var(--color-success)",
@@ -16,6 +17,20 @@ export function ClientDetailPage() {
   const { id } = useParams();
   const [client, setClient] = useState(null);
   const [missing, setMissing] = useState(false);
+  const [files, setFiles] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/clients/${id}/files`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        if (!cancelled) setFiles(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,13 +83,33 @@ export function ClientDetailPage() {
     ["Place of birth", client.place_of_birth],
     ["Issued by", client.issued_by],
     ["Phone", client.phone],
+    ["Email", client.email],
+    ["Entreprise", client.entreprise_name],
+    ["Code fiscal", client.code_fiscal],
+    ["Visa status", client.visa_status],
+    ["Visa type", client.visa_type],
+    ["Client relation", client.client_relation],
+    ["Prix dossier", client.prix_dossier],
+    ["Paiement type", client.paiement_type],
+    ["Currency", client.currency],
   ];
 
   return (
     <div style={{ margin: "0 auto", maxWidth: "1100px" }}>
-      <Link to="/clients" style={{ fontSize: "13px", fontWeight: "600", color: "var(--color-brand)" }}>
-        ← Clients
-      </Link>
+      <div className="flex-between">
+        <Link to="/clients" style={{ fontSize: "13px", fontWeight: "600", color: "var(--color-brand)" }}>
+          ← Clients
+        </Link>
+        <Magnet padding={26} magnetStrength={14}>
+          <Link
+            to={`/clients/${id}/edit`}
+            className="btn btn-brand"
+            style={{ width: "auto", padding: "8px 16px", fontSize: "13px" }}
+          >
+            Edit client
+          </Link>
+        </Magnet>
+      </div>
       <div className="grid-12" style={{ marginTop: "24px" }}>
         <div className="col-4">
           <div className="card" style={{ padding: 0, overflow: "hidden" }}>
@@ -145,13 +180,19 @@ export function ClientDetailPage() {
           <div className="grid-2">
             <div className="card" style={{ padding: "24px" }}>
               <h2 style={{ marginBottom: "12px", fontSize: "16px", fontWeight: "700" }}>Documents</h2>
-              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px" }}>
-                {client.documents.map((d) => (
-                  <li key={d} style={{ borderBottom: "1px solid var(--color-line)", padding: "8px 0" }}>
-                    {d}
-                  </li>
-                ))}
-              </ul>
+              {files.length === 0 ? (
+                <p style={{ fontSize: "13px", color: "var(--color-muted)" }}>No files uploaded yet.</p>
+              ) : (
+                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px" }}>
+                  {files.map((f) => (
+                    <li key={f.id} style={{ borderBottom: "1px solid var(--color-line)", padding: "8px 0" }}>
+                      <a href={f.url} target="_blank" rel="noreferrer" style={{ color: "var(--color-brand)" }}>
+                        {f.filename}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             <div className="card" style={{ padding: "24px" }}>
               <h2 style={{ marginBottom: "12px", fontSize: "16px", fontWeight: "700" }}>Invoices</h2>

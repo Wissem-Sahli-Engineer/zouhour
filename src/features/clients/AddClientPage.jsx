@@ -1,0 +1,251 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Button } from "../../components/ui/Button";
+import { BoxInput, BoxSelect, Field } from "../../components/ui/Input";
+import { toast } from "../../components/ui/Toast";
+import { PASSPORT_FIELDS, BUSINESS_FIELDS } from "./fields";
+
+const EMPTY = Object.fromEntries([...PASSPORT_FIELDS, ...BUSINESS_FIELDS].map((k) => [k, ""]));
+
+export function AddClientPage() {
+  const navigate = useNavigate();
+  const [form, setForm] = useState({ ...EMPTY, visa_status: "" });
+
+  const [passportFile, setPassportFile] = useState(null);
+  const [passportUrl, setPassportUrl] = useState("");
+  const [extracting, setExtracting] = useState(false);
+
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoUrl, setPhotoUrl] = useState("");
+
+  const [otherFiles, setOtherFiles] = useState([]);
+
+  const [busy, setBusy] = useState(false);
+
+  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  const onPassportSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPassportFile(file);
+    setPassportUrl(URL.createObjectURL(file));
+  };
+
+  const extractViaAi = async () => {
+    if (!passportFile) {
+      toast("Upload a passport image first", "err");
+      return;
+    }
+    setExtracting(true);
+    const body = new FormData();
+    body.append("file", passportFile);
+    try {
+      const res = await fetch("/api/extract", { method: "POST", body });
+      if (!res.ok) throw new Error("fail");
+      const data = await res.json();
+      setForm((f) => ({ ...f, ...Object.fromEntries(PASSPORT_FIELDS.map((k) => [k, data[k] || ""])) }));
+      toast("Passport details extracted!", "ok");
+    } catch {
+      toast("Extraction failed. Is the backend running on :8001?", "err");
+    } finally {
+      setExtracting(false);
+    }
+  };
+
+  const onPhotoSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoUrl(URL.createObjectURL(file));
+  };
+
+  const onOtherFilesSelect = (e) => {
+    const files = Array.from(e.target.files || []);
+    setOtherFiles((f) => [...f, ...files]);
+  };
+
+  const removeOtherFile = (index) => {
+    setOtherFiles((files) => files.filter((_, i) => i !== index));
+  };
+
+  const fileToDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      const user_photo = photoFile ? await fileToDataUrl(photoFile) : "";
+
+      const res = await fetch("/api/clients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, user_photo }),
+      });
+      if (!res.ok) throw new Error("fail");
+      const { client } = await res.json();
+
+      const filesToUpload = [...(passportFile ? [passportFile] : []), ...otherFiles];
+      if (filesToUpload.length) {
+        const body = new FormData();
+        filesToUpload.forEach((f) => body.append("files", f));
+        await fetch(`/api/clients/${client.id}/files`, { method: "POST", body }).catch(() => {});
+      }
+
+      toast("Client saved", "ok");
+      navigate(`/clients/${client.id}`);
+    } catch {
+      toast("Could not save client", "err");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div style={{ margin: "0 auto", maxWidth: "900px" }}>
+      <Link to="/clients" style={{ fontSize: "13px", fontWeight: "600", color: "var(--color-brand)" }}>
+        ← Clients
+      </Link>
+      <h1 style={{ marginTop: "16px", fontSize: "28px", fontWeight: "700" }}>Add client</h1>
+      <p style={{ marginBottom: "24px", fontSize: "14px", color: "var(--color-muted)" }}>
+        Upload the passport to extract its fields with AI, upload the client's own photo, then fill in the rest.
+      </p>
+
+      <div className="card">
+        <div className="grid-2">
+          <div>
+            <label className="upload-dropzone" style={{ display: "block" }}>
+              <div style={{ fontWeight: "600", fontSize: "15px", color: "var(--color-ink)" }}>Upload passport image</div>
+              <div style={{ marginTop: "4px", fontSize: "13px", color: "var(--color-muted)" }}>
+                Saved with the client's files
+              </div>
+              <input type="file" accept="image/*" style={{ display: "none" }} onChange={onPassportSelect} />
+            </label>
+            {passportUrl ? (
+              <img
+                src={passportUrl}
+                alt=""
+                className="preview-img-passport"
+                style={{ marginTop: "12px" }}
+              />
+            ) : null}
+            <div style={{ marginTop: "12px" }}>
+              <Button variant="brand" loading={extracting} onClick={extractViaAi} disabled={!passportFile}>
+                Extract via AI
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <label className="upload-dropzone" style={{ display: "block" }}>
+              <div style={{ fontWeight: "600", fontSize: "15px", color: "var(--color-ink)" }}>Upload client photo</div>
+              <div style={{ marginTop: "4px", fontSize: "13px", color: "var(--color-muted)" }}>
+                Manual upload — becomes the profile picture
+              </div>
+              <input type="file" accept="image/*" style={{ display: "none" }} onChange={onPhotoSelect} />
+            </label>
+            {photoUrl ? (
+              <img src={photoUrl} alt="" className="preview-img-portrait" style={{ marginTop: "12px" }} />
+            ) : null}
+          </div>
+        </div>
+
+        <h2 style={{ marginTop: "32px", marginBottom: "8px", fontSize: "15px", fontWeight: "700", color: "var(--color-ink)" }}>
+          Passport information
+        </h2>
+        <div className="grid-2">
+          {PASSPORT_FIELDS.map((key) => (
+            <Field key={key} label={key.replaceAll("_", " ")}>
+              {key === "sex" ? (
+                <BoxSelect value={form.sex} onChange={set("sex")}>
+                  <option value="">Select</option>
+                  <option value="M">M</option>
+                  <option value="F">F</option>
+                  <option value="X">X</option>
+                </BoxSelect>
+              ) : (
+                <BoxInput
+                  type={key.includes("date") ? "date" : "text"}
+                  value={form[key]}
+                  onChange={set(key)}
+                />
+              )}
+            </Field>
+          ))}
+        </div>
+
+        <h2 style={{ marginTop: "32px", marginBottom: "8px", fontSize: "15px", fontWeight: "700", color: "var(--color-ink)" }}>
+          Contact & business
+        </h2>
+        <div className="grid-2">
+          <Field label="visa status">
+            <BoxSelect value={form.visa_status} onChange={set("visa_status")}>
+              <option value="">Select</option>
+              <option value="not_started">Not started</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </BoxSelect>
+          </Field>
+          {BUSINESS_FIELDS.map((key) => (
+            <Field key={key} label={key.replaceAll("_", " ")}>
+              <BoxInput
+                type={key === "prix_dossier" ? "number" : key === "email" ? "email" : "text"}
+                value={form[key]}
+                onChange={set(key)}
+              />
+            </Field>
+          ))}
+        </div>
+
+        <h2 style={{ marginTop: "32px", marginBottom: "8px", fontSize: "15px", fontWeight: "700", color: "var(--color-ink)" }}>
+          Other files
+        </h2>
+        <label className="upload-dropzone" style={{ display: "block" }}>
+          <div style={{ fontWeight: "600", fontSize: "14px", color: "var(--color-ink)" }}>Upload other documents</div>
+          <div style={{ marginTop: "4px", fontSize: "13px", color: "var(--color-muted)" }}>
+            Contracts, booking confirmations, bank statements…
+          </div>
+          <input type="file" multiple style={{ display: "none" }} onChange={onOtherFilesSelect} />
+        </label>
+        {otherFiles.length ? (
+          <ul style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "6px" }}>
+            {otherFiles.map((f, i) => (
+              <li
+                key={i}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: "13px",
+                  color: "var(--color-ink)",
+                  backgroundColor: "var(--color-surface)",
+                  borderRadius: "8px",
+                  padding: "8px 12px",
+                }}
+              >
+                <span>{f.name}</span>
+                <button
+                  type="button"
+                  onClick={() => removeOtherFile(i)}
+                  style={{ color: "var(--color-danger)", fontWeight: "600" }}
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        <div style={{ marginTop: "24px" }}>
+          <Button variant="brand" loading={busy} onClick={save}>
+            Save client to database
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
