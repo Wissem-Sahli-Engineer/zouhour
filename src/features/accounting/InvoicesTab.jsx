@@ -34,6 +34,30 @@ export function InvoicesTab({ country }) {
 
   useEffect(load, [country]);
 
+  const downloadInvoice = async (inv) => {
+    try {
+      const res = await fetch(inv.pdf_url);
+      if (!res.ok) throw new Error("fail");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${inv.number}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch {
+      toast("Could not download the PDF", "err");
+    }
+  };
+
+  const removeInvoice = async (id) => {
+    if (!window.confirm("Remove this invoice/receipt?")) return;
+    await fetch(`/api/invoices/${id}`, { method: "DELETE" }).catch(() => {});
+    load();
+  };
+
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
   const setItem = (i, key) => (e) =>
@@ -189,12 +213,24 @@ export function InvoicesTab({ country }) {
                   <td style={{ textTransform: "capitalize" }}>{inv.doc_type}</td>
                   <td>{inv.client_name}</td>
                   <td>{inv.issue_date}</td>
-                  <td>
+                  <td style={{ display: "flex", gap: "8px" }}>
                     <Magnet padding={22} magnetStrength={14}>
-                      <a href={inv.pdf_url} target="_blank" rel="noreferrer" className="btn btn-brand" style={{ width: "auto", padding: "6px 14px", fontSize: "12px", display: "inline-flex" }}>
+                      <button
+                        type="button"
+                        onClick={() => downloadInvoice(inv)}
+                        className="btn btn-brand"
+                        style={{ width: "auto", padding: "6px 14px", fontSize: "12px", display: "inline-flex" }}
+                      >
                         Download PDF
-                      </a>
+                      </button>
                     </Magnet>
+                    <button
+                      type="button"
+                      onClick={() => removeInvoice(inv.id)}
+                      style={{ color: "var(--color-danger)", fontSize: "12px", fontWeight: "600" }}
+                    >
+                      Remove
+                    </button>
                   </td>
                 </tr>
               ))

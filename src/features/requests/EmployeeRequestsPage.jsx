@@ -4,15 +4,13 @@ import { Card } from "../../components/ui/nav";
 import { BoxInput, Field } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { toast } from "../../components/ui/Toast";
-import { IconPalmTree, IconWallet, IconCoins, IconClipboard } from "../../components/ui/Icons";
+import { IconPalmTree, IconWallet, IconCoins } from "../../components/ui/Icons";
 import { useAuth } from "../../store/auth";
-import { PayrollTab } from "./PayrollTab";
 
 const REQUEST_TABS = [
   { id: "vacations", label: "Vacations", icon: <IconPalmTree size={20} /> },
   { id: "salary-advances", label: "Salary Advances", icon: <IconWallet size={20} /> },
   { id: "loans", label: "Loans", icon: <IconCoins size={20} /> },
-  { id: "fiche-de-paie", label: "Fiche de paie", icon: <IconClipboard size={20} /> },
 ];
 
 const BADGE_TONE = {
@@ -69,6 +67,12 @@ export function EmployeeRequestsPage() {
     }
   };
 
+  const remove = async (id) => {
+    if (!window.confirm("Remove this request?")) return;
+    await fetch(`/api/employee-requests/${id}`, { method: "DELETE" }).catch(() => {});
+    load();
+  };
+
   return (
     <div className="page-container-max">
       <PageTitle kicker="Human resources" title="Employee Requests" />
@@ -77,56 +81,56 @@ export function EmployeeRequestsPage() {
         <Card tabs={REQUEST_TABS} activeTab={tab} onTabChange={setTab} maxWidth={460} />
       </div>
 
-      {tab === "fiche-de-paie" ? (
-        <PayrollTab />
-      ) : (
-        <>
-          <form onSubmit={submit} className="card" style={{ display: "grid", gridTemplateColumns: "2fr 1fr auto", gap: "12px", alignItems: "end" }}>
-            <Field label="detail">
-              <BoxInput value={detail} onChange={(e) => setDetail(e.target.value)} placeholder="e.g. Nov 3 – Nov 10, or TND 400" />
-            </Field>
-            <Field label="submission date">
-              <BoxInput type="date" value={submittedDate} onChange={(e) => setSubmittedDate(e.target.value)} />
-            </Field>
-            <Button variant="brand" type="submit" loading={busy}>
-              Submit
-            </Button>
-          </form>
+      <form onSubmit={submit} className="card" style={{ display: "grid", gridTemplateColumns: "2fr 1fr auto", gap: "12px", alignItems: "end" }}>
+        <Field label="detail">
+          <BoxInput value={detail} onChange={(e) => setDetail(e.target.value)} placeholder="e.g. Nov 3 – Nov 10, or TND 400" />
+        </Field>
+        <Field label="submission date">
+          <BoxInput type="date" value={submittedDate} onChange={(e) => setSubmittedDate(e.target.value)} />
+        </Field>
+        <Button variant="brand" type="submit" loading={busy} style={{ top: "-20px" }}>
+          Submit
+        </Button>
+      </form>
 
-          <div className="card table-wrapper" style={{ marginTop: "50px" }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Employee</th>
-                  <th>Detail</th>
-                  <th>Submitted</th>
-                  <th>Status</th>
+      <div className="card table-wrapper" style={{ marginTop: "50px" }}>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Detail</th>
+              <th>Submitted</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={5} style={{ padding: "32px 16px", textAlign: "center", color: "var(--color-muted)" }}>
+                  No requests yet.
+                </td>
+              </tr>
+            ) : (
+              rows.map((r) => (
+                <tr key={r.id}>
+                  <td>{r.employee_name}</td>
+                  <td>{r.detail}</td>
+                  <td>{r.submitted_date}</td>
+                  <td>
+                    <span className={`badge ${BADGE_TONE[r.status]}`}>{r.status}</span>
+                  </td>
+                  <td>
+                    <button type="button" onClick={() => remove(r.id)} style={{ color: "var(--color-danger)", fontSize: "12px", fontWeight: "600" }}>
+                      Remove
+                    </button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {rows.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} style={{ padding: "32px 16px", textAlign: "center", color: "var(--color-muted)" }}>
-                      No requests yet.
-                    </td>
-                  </tr>
-                ) : (
-                  rows.map((r) => (
-                    <tr key={r.id}>
-                      <td>{r.employee_name}</td>
-                      <td>{r.detail}</td>
-                      <td>{r.submitted_date}</td>
-                      <td>
-                        <span className={`badge ${BADGE_TONE[r.status]}`}>{r.status}</span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

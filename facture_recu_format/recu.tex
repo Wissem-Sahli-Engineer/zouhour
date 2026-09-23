@@ -11,17 +11,7 @@
 \usepackage[bidi=default]{babel}
 \babelprovide[import]{arabic}
 \babelprovide[main,import]{english}
-% Loaded by file path (not by system font name) so this compiles the same
-% way on Overleaf, your laptop, or any CI runner, with zero font installs.
-% Put these .ttf files in the same folder as this .tex file.
-\babelfont{rm}[
-  Path       = ./,
-  Extension  = .ttf,
-  UprightFont = Amiri-Regular,
-  BoldFont    = Amiri-Bold,
-  ItalicFont  = Amiri-Italic,
-  BoldItalicFont = Amiri-BoldItalic
-]{Amiri}
+\babelfont{rm}{Amiri}
 \babelfont{sf}{Arial}
 \usepackage{graphicx}
 \usepackage{xcolor}

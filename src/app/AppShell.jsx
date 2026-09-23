@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { ChatbotPanel } from "../features/chatbot/ChatbotPanel";
 import { ChatFab } from "../components/ChatFab";
 import { NotificationBell } from "../components/NotificationBell";
+import { GlobalSearch } from "../components/GlobalSearch";
 import Magnet from "../components/ui/magnet";
 import {
   IconBot,
@@ -13,8 +14,8 @@ import {
   IconLogout,
   IconMenu,
   IconPeople,
-  IconSearch,
   IconUsersGear,
+  IconWallet,
   LogoMark,
 } from "../components/ui/Icons";
 import { DURATION, EASE, ScrollTrigger, gsap, useGSAP } from "../lib/gsap";
@@ -34,6 +35,7 @@ const NAV_ACCOUNT = [
 const NAV_HR = [
   { to: "/MyRequests", label: "My Requests", icon: IconClipboard },
   { to: "/EmployeeRequests", label: "Employee Requests", icon: IconUsersGear },
+  { to: "/Payroll", label: "Fiche de paie", icon: IconWallet },
 ];
 
 export function AppShell() {
@@ -45,8 +47,6 @@ export function AppShell() {
   const logout = useAuth((s) => s.logout);
   const sidebarOpen = useUi((s) => s.sidebarOpen);
   const toggleSidebar = useUi((s) => s.toggleSidebar);
-  const search = useUi((s) => s.search);
-  const setSearch = useUi((s) => s.setSearch);
 
   useGSAP(
     (context, contextSafe) => {
@@ -196,17 +196,7 @@ export function AppShell() {
                 <IconMenu />
               </button>
             </Magnet>
-            <label className="search-bar">
-              <span className="search-bar-icon">
-                <IconSearch size={16} />
-              </span>
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search clients, invoices…"
-                className="search-bar-input"
-              />
-            </label>
+            <GlobalSearch />
           </div>
 
           <div className="header-right">

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { FALLBACK_CLIENTS, enrich } from "./mock";
 import Magnet from "../../components/ui/magnet";
+import { toast } from "../../components/ui/Toast";
 
 const STATUS_TONE = {
   paid: "var(--color-success)",
@@ -15,22 +16,37 @@ const STATUS_TONE = {
 
 export function ClientDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [client, setClient] = useState(null);
   const [missing, setMissing] = useState(false);
   const [files, setFiles] = useState([]);
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadFiles = () => {
     fetch(`/api/clients/${id}/files`)
       .then((r) => (r.ok ? r.json() : []))
-      .then((data) => {
-        if (!cancelled) setFiles(Array.isArray(data) ? data : []);
-      })
+      .then((data) => setFiles(Array.isArray(data) ? data : []))
       .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
+  };
+
+  useEffect(loadFiles, [id]);
+
+  const removeFile = async (fileId) => {
+    if (!window.confirm("Remove this file?")) return;
+    await fetch(`/api/clients/${id}/files/${fileId}`, { method: "DELETE" }).catch(() => {});
+    loadFiles();
+  };
+
+  const removeClient = async () => {
+    if (!window.confirm("Remove this client permanently? This cannot be undone.")) return;
+    try {
+      const res = await fetch(`/api/clients/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("fail");
+      toast("Client removed", "ok");
+      navigate("/clients");
+    } catch {
+      toast("Could not remove client", "err");
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -100,15 +116,27 @@ export function ClientDetailPage() {
         <Link to="/clients" style={{ fontSize: "13px", fontWeight: "600", color: "var(--color-brand)" }}>
           ← Clients
         </Link>
-        <Magnet padding={26} magnetStrength={14}>
-          <Link
-            to={`/clients/${id}/edit`}
-            className="btn btn-brand"
-            style={{ width: "auto", padding: "8px 16px", fontSize: "13px" }}
-          >
-            Edit client
-          </Link>
-        </Magnet>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <Magnet padding={26} magnetStrength={14}>
+            <Link
+              to={`/clients/${id}/edit`}
+              className="btn btn-brand"
+              style={{ width: "auto", padding: "8px 16px", fontSize: "13px" }}
+            >
+              Edit client
+            </Link>
+          </Magnet>
+          <Magnet padding={26} magnetStrength={14}>
+            <button
+              type="button"
+              onClick={removeClient}
+              className="btn btn-danger"
+              style={{ width: "auto", padding: "8px 16px", fontSize: "13px" }}
+            >
+              Remove client
+            </button>
+          </Magnet>
+        </div>
       </div>
       <div className="grid-12" style={{ marginTop: "24px" }}>
         <div className="col-4">
@@ -185,10 +213,13 @@ export function ClientDetailPage() {
               ) : (
                 <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px" }}>
                   {files.map((f) => (
-                    <li key={f.id} style={{ borderBottom: "1px solid var(--color-line)", padding: "8px 0" }}>
+                    <li key={f.id} className="flex-between" style={{ borderBottom: "1px solid var(--color-line)", padding: "8px 0" }}>
                       <a href={f.url} target="_blank" rel="noreferrer" style={{ color: "var(--color-brand)" }}>
                         {f.filename}
                       </a>
+                      <button type="button" onClick={() => removeFile(f.id)} style={{ color: "var(--color-danger)", fontSize: "12px", fontWeight: "600" }}>
+                        Remove
+                      </button>
                     </li>
                   ))}
                 </ul>

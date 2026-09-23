@@ -18,8 +18,6 @@ from backend.models import (
     AgencyRequest,
     AgencyRequestCreate,
     BankAccount,
-    BankLoan,
-    BankLoanCreate,
     BankTransaction,
     BankTransactionCreate,
     Client,
@@ -645,25 +643,30 @@ def add_bank_transaction(
     return tx
 
 
-@app.get("/banking/loans")
-def get_bank_loans(country: str, session: Session = Depends(get_session)):
-    account_ids = session.exec(
-        select(BankAccount.id).where(BankAccount.country == country)
-    ).all()
-    if not account_ids:
-        return []
-    return session.exec(
-        select(BankLoan).where(BankLoan.account_id.in_(account_ids)).order_by(BankLoan.id)
-    ).all()
-
-
-@app.post("/banking/loans", status_code=201)
-def add_bank_loan(data: BankLoanCreate, session: Session = Depends(get_session)):
-    loan = BankLoan.model_validate(data)
-    session.add(loan)
+@app.delete("/banking/accounts/{account_id}/transactions/{tx_id}")
+def delete_bank_transaction(account_id: int, tx_id: int, session: Session = Depends(get_session)):
+    tx = session.get(BankTransaction, tx_id)
+    if not tx or tx.account_id != account_id:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    account = session.get(BankAccount, account_id)
+    if account:
+        account.balance = account.balance - tx.amount
+        session.add(account)
+    session.delete(tx)
     session.commit()
-    session.refresh(loan)
-    return loan
+    return {"status": "success"}
+
+
+@app.delete("/banking/accounts/{account_id}")
+def delete_bank_account(account_id: int, session: Session = Depends(get_session)):
+    account = session.get(BankAccount, account_id)
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+    for tx in session.exec(select(BankTransaction).where(BankTransaction.account_id == account_id)).all():
+        session.delete(tx)
+    session.delete(account)
+    session.commit()
+    return {"status": "success"}
 
 
 # =====================================================================
@@ -723,6 +726,16 @@ def get_invoice_pdf(invoice_id: int, session: Session = Depends(get_session)):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Could not generate PDF: {e}")
     return FileResponse(pdf_path, media_type="application/pdf", filename=f"{invoice.number}.pdf")
+
+
+@app.delete("/invoices/{invoice_id}")
+def delete_invoice(invoice_id: int, session: Session = Depends(get_session)):
+    invoice = session.get(Invoice, invoice_id)
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    session.delete(invoice)
+    session.commit()
+    return {"status": "success"}
 
 
 # =====================================================================
@@ -816,6 +829,16 @@ def get_payslip_pdf(payslip_id: int, session: Session = Depends(get_session)):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Could not generate PDF: {e}")
     return FileResponse(pdf_path, media_type="application/pdf", filename=f"payslip-{payslip.id}.pdf")
+
+
+@app.delete("/payroll/payslips/{payslip_id}")
+def delete_payslip(payslip_id: int, session: Session = Depends(get_session)):
+    payslip = session.get(Payslip, payslip_id)
+    if not payslip:
+        raise HTTPException(status_code=404, detail="Payslip not found")
+    session.delete(payslip)
+    session.commit()
+    return {"status": "success"}
 
 
 if __name__ == "__main__":

@@ -160,15 +160,47 @@
   border-radius: var(--radius-field);
   border: 1.5px solid var(--color-line);
   background-color: var(--color-white);
-  padding: 10px 12px;
+  padding: 10px 36px 10px 12px;
   font-size: var(--text-base);
   color: var(--color-ink);
   outline: none;
   transition: border-color var(--duration-fast);
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a8a8f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
 }
 
 .select-box:focus {
   border-color: var(--color-brand);
+}
+
+/* Custom-styled date/time inputs so they don't look like bare browser controls */
+.input-box[type="date"],
+.input-box[type="time"],
+.input-box[type="datetime-local"] {
+  cursor: pointer;
+}
+
+.input-box[type="date"]::-webkit-calendar-picker-indicator,
+.input-box[type="time"]::-webkit-calendar-picker-indicator,
+.input-box[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  padding: 2px;
+  margin-left: 6px;
+  border-radius: 6px;
+  filter: invert(46%) sepia(6%) saturate(0%) hue-rotate(180deg);
+  transition: filter var(--duration-fast), background-color var(--duration-fast);
+}
+
+.input-box[type="date"]:hover::-webkit-calendar-picker-indicator,
+.input-box[type="time"]:hover::-webkit-calendar-picker-indicator,
+.input-box[type="datetime-local"]:hover::-webkit-calendar-picker-indicator {
+  background-color: var(--color-surface);
+  filter: invert(28%) sepia(66%) saturate(1000%) hue-rotate(215deg);
 }
 
 /* ---------- Cards & Headers ---------- */
@@ -279,7 +311,6 @@
   cursor: pointer;
   background-color: var(--color-brand);
   color: var(--color-white);
-  box-shadow: var(--shadow-fab);
   transition: filter var(--duration-fast);
 }
 
@@ -675,9 +706,10 @@
 .col-6 { grid-column: span 6; }
 .col-5 { grid-column: span 5; }
 .col-4 { grid-column: span 4; }
+.col-3 { grid-column: span 3; }
 
 @media (max-width: 1024px) {
-  .col-8, .col-7, .col-5, .col-4 {
+  .col-8, .col-7, .col-5, .col-4, .col-3 {
     grid-column: span 12;
   }
 }

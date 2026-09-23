@@ -1,8 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
+  Cell,
+  Legend,
   Line,
   LineChart,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -12,6 +18,17 @@ import { PageTitle } from "../../components/ui/Card";
 import { BoxSelect } from "../../components/ui/Input";
 import { useScrollReveal } from "../../lib/useScrollReveal";
 
+const COUNTRIES = ["tunisia", "libya"];
+
+const VISA_STATUS_META = [
+  { id: "not_started", name: "Not started", color: "#9ca3af" },
+  { id: "pending", name: "Pending", color: "#F0924B" },
+  { id: "approved", name: "Approved", color: "#22c55e" },
+  { id: "rejected", name: "Rejected", color: "#ef4444" },
+];
+
+const COUNTRY_COLORS = { tunisia: "#8B5CF6", libya: "#F0924B" };
+
 export function StatsPage() {
   const root = useRef(null);
   useScrollReveal(root);
@@ -19,11 +36,60 @@ export function StatsPage() {
   const [country, setCountry] = useState("all");
   const [visaType, setVisaType] = useState("all");
 
+  const [treasuryMonthly, setTreasuryMonthly] = useState([]);
+  const [invoicesByType, setInvoicesByType] = useState([]);
+  const [bankAccounts, setBankAccounts] = useState([]);
+  const [payrollByPeriod, setPayrollByPeriod] = useState([]);
+
   useEffect(() => {
     fetch("/api/clients")
       .then((r) => (r.ok ? r.json() : []))
       .then((data) => setClients(Array.isArray(data) ? data : []))
       .catch(() => setClients([]));
+
+    Promise.all(COUNTRIES.map((c) => fetch(`/api/treasury?country=${c}`).then((r) => (r.ok ? r.json() : null))))
+      .then((results) => {
+        const merged = {};
+        results.forEach((data) => {
+          if (!data) return;
+          (data.history || []).forEach((row) => {
+            const bucket = merged[row.month] || { month: row.month, gathering: 0, spending: 0 };
+            bucket.gathering += row.gathering;
+            bucket.spending += row.spending;
+            merged[row.month] = bucket;
+          });
+        });
+        setTreasuryMonthly(Object.values(merged).sort((a, b) => a.month.localeCompare(b.month)).slice(-6));
+      })
+      .catch(() => {});
+
+    Promise.all(COUNTRIES.map((c) => fetch(`/api/invoices?country=${c}`).then((r) => (r.ok ? r.json() : []))))
+      .then((results) => {
+        const counts = { facture: 0, recu: 0 };
+        results.flat().forEach((inv) => {
+          counts[inv.doc_type] = (counts[inv.doc_type] || 0) + 1;
+        });
+        setInvoicesByType([
+          { name: "Factures", value: counts.facture || 0, color: "#8B5CF6" },
+          { name: "Reçus", value: counts.recu || 0, color: "#F0924B" },
+        ]);
+      })
+      .catch(() => {});
+
+    Promise.all(COUNTRIES.map((c) => fetch(`/api/banking/accounts?country=${c}`).then((r) => (r.ok ? r.json() : []))))
+      .then((results) => setBankAccounts(results.flat()))
+      .catch(() => {});
+
+    fetch("/api/payroll/payslips")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        const byPeriod = {};
+        (Array.isArray(data) ? data : []).forEach((p) => {
+          byPeriod[p.period_label] = (byPeriod[p.period_label] || 0) + p.gross_total;
+        });
+        setPayrollByPeriod(Object.entries(byPeriod).map(([period, total]) => ({ period, total })));
+      })
+      .catch(() => {});
   }, []);
 
   const visaTypes = useMemo(
@@ -51,11 +117,22 @@ export function StatsPage() {
       .map((month) => ({ month, count: byMonth[month] }));
   }, [filtered]);
 
+  const statusCounts = VISA_STATUS_META.map((s) => ({
+    ...s,
+    value: clients.filter((c) => (c.visa_status || "not_started") === s.id).length,
+  }));
+
+  const byCountry = COUNTRIES.map((c) => ({
+    name: c,
+    value: clients.filter((cl) => cl.country?.toLowerCase() === c).length,
+    color: COUNTRY_COLORS[c],
+  })).filter((c) => c.value > 0);
+
   return (
     <div ref={root} className="page-container-max">
       <PageTitle kicker="Analytics" title="New clients over time" />
 
-      <div className="grid-12">
+      <div className="grid-12" style={{ marginBottom: "24px" }}>
         <aside data-reveal className="col-4 card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <p style={{ fontSize: "14px", fontWeight: "700", color: "var(--color-ink)" }}>Filters</p>
           <div>
@@ -88,7 +165,7 @@ export function StatsPage() {
           <p style={{ marginBottom: "24px", fontSize: "13px", color: "var(--color-muted)" }}>
             {country === "all" ? "All countries" : country} · {visaType === "all" ? "all visa types" : visaType}
           </p>
-          <div style={{ height: "320px" }}>
+          <div style={{ height: "280px" }}>
             {series.length === 0 ? (
               <div className="flex-center" style={{ height: "100%", color: "var(--color-muted)", fontSize: "13px" }}>
                 No client data yet for this filter.
@@ -102,6 +179,139 @@ export function StatsPage() {
                   <Tooltip />
                   <Line type="monotone" dataKey="count" name="New clients" stroke="#8B5CF6" strokeWidth={2.4} dot={{ r: 4, fill: "#8B5CF6" }} />
                 </LineChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid-12" style={{ marginBottom: "24px" }}>
+        <div data-reveal className="col-6 card">
+          <h2 style={{ marginBottom: "16px", fontSize: "16px", fontWeight: "700", color: "var(--color-ink)" }}>
+            Clients by visa status
+          </h2>
+          <div style={{ height: "220px" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={statusCounts} layout="vertical" margin={{ left: 8, right: 8 }}>
+                <XAxis type="number" hide allowDecimals={false} />
+                <YAxis type="category" dataKey="name" width={92} tick={{ fill: "#1a1a1a", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <Tooltip />
+                <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={14}>
+                  {statusCounts.map((s) => (
+                    <Cell key={s.name} fill={s.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div data-reveal className="col-3 card">
+          <h2 style={{ marginBottom: "16px", fontSize: "16px", fontWeight: "700", color: "var(--color-ink)" }}>
+            Clients by country
+          </h2>
+          <div style={{ height: "220px" }}>
+            {byCountry.length === 0 ? (
+              <div className="flex-center" style={{ height: "100%", color: "var(--color-muted)", fontSize: "13px" }}>No data yet.</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={byCountry} dataKey="value" nameKey="name" innerRadius={45} outerRadius={75}>
+                    {byCountry.map((c) => (
+                      <Cell key={c.name} fill={c.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
+        <div data-reveal className="col-3 card">
+          <h2 style={{ marginBottom: "16px", fontSize: "16px", fontWeight: "700", color: "var(--color-ink)" }}>
+            Factures vs reçus
+          </h2>
+          <div style={{ height: "220px" }}>
+            {invoicesByType.every((i) => i.value === 0) ? (
+              <div className="flex-center" style={{ height: "100%", color: "var(--color-muted)", fontSize: "13px" }}>No invoices yet.</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={invoicesByType} dataKey="value" nameKey="name" innerRadius={45} outerRadius={75}>
+                    {invoicesByType.map((i) => (
+                      <Cell key={i.name} fill={i.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid-12">
+        <div data-reveal className="col-6 card">
+          <h2 style={{ marginBottom: "16px", fontSize: "16px", fontWeight: "700", color: "var(--color-ink)" }}>
+            Treasury — gathering vs spending
+          </h2>
+          <div style={{ height: "240px" }}>
+            {treasuryMonthly.length === 0 ? (
+              <div className="flex-center" style={{ height: "100%", color: "var(--color-muted)", fontSize: "13px" }}>No treasury history yet.</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={treasuryMonthly}>
+                  <CartesianGrid stroke="#e7e7ea" strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="month" tick={{ fill: "#8a8a8f", fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: "#8a8a8f", fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="gathering" name="Gathering" fill="#8B5CF6" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="spending" name="Spending" fill="#F0924B" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
+        <div data-reveal className="col-3 card">
+          <h2 style={{ marginBottom: "16px", fontSize: "16px", fontWeight: "700", color: "var(--color-ink)" }}>
+            Bank balances
+          </h2>
+          <div style={{ height: "240px" }}>
+            {bankAccounts.length === 0 ? (
+              <div className="flex-center" style={{ height: "100%", color: "var(--color-muted)", fontSize: "13px" }}>No accounts yet.</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={bankAccounts} layout="vertical" margin={{ left: 8, right: 8 }}>
+                  <XAxis type="number" hide />
+                  <YAxis type="category" dataKey="name" width={90} tick={{ fill: "#1a1a1a", fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <Tooltip />
+                  <Bar dataKey="balance" fill="#22c55e" radius={[0, 6, 6, 0]} barSize={14} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
+        <div data-reveal className="col-3 card">
+          <h2 style={{ marginBottom: "16px", fontSize: "16px", fontWeight: "700", color: "var(--color-ink)" }}>
+            Payroll cost per period
+          </h2>
+          <div style={{ height: "240px" }}>
+            {payrollByPeriod.length === 0 ? (
+              <div className="flex-center" style={{ height: "100%", color: "var(--color-muted)", fontSize: "13px" }}>No payslips yet.</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={payrollByPeriod}>
+                  <XAxis dataKey="period" tick={{ fill: "#8a8a8f", fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: "#8a8a8f", fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <Tooltip />
+                  <Bar dataKey="total" fill="#1F3A5F" radius={[6, 6, 0, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             )}
           </div>

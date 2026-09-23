@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { PageTitle } from "../../components/ui/Card";
 import { BoxInput, Field } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { toast } from "../../components/ui/Toast";
 
-export function PayrollTab() {
+export function PayrollPage() {
   const [rows, setRows] = useState([]);
   const [period, setPeriod] = useState(new Date().toLocaleString("en", { month: "long", year: "numeric" }));
   const [busyRow, setBusyRow] = useState(null);
@@ -71,9 +72,35 @@ export function PayrollTab() {
     }
   };
 
+  const removePayslip = async (id) => {
+    if (!window.confirm("Remove this payslip?")) return;
+    await fetch(`/api/payroll/payslips/${id}`, { method: "DELETE" }).catch(() => {});
+    loadHistory();
+  };
+
+  const downloadPayslip = async (p) => {
+    try {
+      const res = await fetch(`/api/payroll/payslips/${p.id}/pdf`);
+      if (!res.ok) throw new Error("fail");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `payslip-${p.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch {
+      toast("Could not download the PDF", "err");
+    }
+  };
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      <div className="card" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "16px", alignItems: "end" }}>
+    <div className="page-container-max">
+      <PageTitle kicker="Human resources" title="Fiche de paie" />
+
+      <div className="card" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "16px", alignItems: "end", marginBottom: "20px" }}>
         <div>
           <label className="upload-dropzone" style={{ display: "block" }}>
             <div style={{ fontWeight: "600", fontSize: "15px", color: "var(--color-ink)" }}>
@@ -91,7 +118,7 @@ export function PayrollTab() {
       </div>
 
       {rows.length > 0 ? (
-        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <div className="card" style={{ padding: 0, overflow: "hidden", marginBottom: "20px" }}>
           <table className="data-table">
             <thead>
               <tr>
@@ -154,10 +181,22 @@ export function PayrollTab() {
                   <td>{p.period_label}</td>
                   <td>{p.hours}</td>
                   <td>{p.currency} {p.gross_total.toLocaleString()}</td>
-                  <td>
-                    <a href={`/api/payroll/payslips/${p.id}/pdf`} target="_blank" rel="noreferrer" className="btn btn-brand" style={{ width: "auto", padding: "6px 14px", fontSize: "12px", display: "inline-flex" }}>
+                  <td style={{ display: "flex", gap: "8px" }}>
+                    <button
+                      type="button"
+                      onClick={() => downloadPayslip(p)}
+                      className="btn btn-brand"
+                      style={{ width: "auto", padding: "6px 14px", fontSize: "12px", display: "inline-flex" }}
+                    >
                       Download PDF
-                    </a>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removePayslip(p.id)}
+                      style={{ color: "var(--color-danger)", fontSize: "12px", fontWeight: "600" }}
+                    >
+                      Remove
+                    </button>
                   </td>
                 </tr>
               ))

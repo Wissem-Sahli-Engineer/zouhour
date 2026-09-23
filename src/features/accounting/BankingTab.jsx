@@ -5,17 +5,14 @@ import { toast } from "../../components/ui/Toast";
 
 const EMPTY_ACCOUNT = { name: "", currency: "", balance: "" };
 const EMPTY_TX = { label: "", amount: "", entry_date: new Date().toISOString().slice(0, 10) };
-const EMPTY_LOAN = { lender: "", principal: "", remaining: "", monthly_payment: "", start_date: new Date().toISOString().slice(0, 10) };
 
 export function BankingTab({ country, currency, flag }) {
   const [accounts, setAccounts] = useState([]);
-  const [loans, setLoans] = useState([]);
   const [selected, setSelected] = useState(null);
   const [transactions, setTransactions] = useState([]);
 
   const [accountForm, setAccountForm] = useState(EMPTY_ACCOUNT);
   const [txForm, setTxForm] = useState(EMPTY_TX);
-  const [loanForm, setLoanForm] = useState(EMPTY_LOAN);
   const [busy, setBusy] = useState(false);
 
   const loadAccounts = () => {
@@ -25,28 +22,24 @@ export function BankingTab({ country, currency, flag }) {
       .catch(() => setAccounts([]));
   };
 
-  const loadLoans = () => {
-    fetch(`/api/banking/loans?country=${country}`)
-      .then((r) => (r.ok ? r.json() : []))
-      .then(setLoans)
-      .catch(() => setLoans([]));
-  };
-
   useEffect(() => {
     loadAccounts();
-    loadLoans();
     setSelected(null);
   }, [country]);
+
+  const loadTransactions = (accountId) => {
+    fetch(`/api/banking/accounts/${accountId}/transactions`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setTransactions)
+      .catch(() => setTransactions([]));
+  };
 
   useEffect(() => {
     if (!selected) {
       setTransactions([]);
       return;
     }
-    fetch(`/api/banking/accounts/${selected.id}/transactions`)
-      .then((r) => (r.ok ? r.json() : []))
-      .then(setTransactions)
-      .catch(() => setTransactions([]));
+    loadTransactions(selected.id);
   }, [selected]);
 
   const addAccount = async (e) => {
@@ -74,6 +67,13 @@ export function BankingTab({ country, currency, flag }) {
     }
   };
 
+  const removeAccount = async (id) => {
+    if (!window.confirm("Remove this account and all its transactions?")) return;
+    await fetch(`/api/banking/accounts/${id}`, { method: "DELETE" }).catch(() => {});
+    if (selected?.id === id) setSelected(null);
+    loadAccounts();
+  };
+
   const addTransaction = async (e) => {
     e.preventDefault();
     if (!selected || !txForm.label || !txForm.amount) return;
@@ -91,9 +91,7 @@ export function BankingTab({ country, currency, flag }) {
       });
       setTxForm(EMPTY_TX);
       loadAccounts();
-      fetch(`/api/banking/accounts/${selected.id}/transactions`)
-        .then((r) => r.json())
-        .then(setTransactions);
+      loadTransactions(selected.id);
       toast("Transaction recorded", "ok");
     } catch {
       toast("Could not save transaction", "err");
@@ -102,32 +100,11 @@ export function BankingTab({ country, currency, flag }) {
     }
   };
 
-  const addLoan = async (e) => {
-    e.preventDefault();
-    if (!loanForm.lender || !loanForm.principal) return;
-    setBusy(true);
-    try {
-      await fetch("/api/banking/loans", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          account_id: selected?.id || null,
-          lender: loanForm.lender,
-          principal: Number(loanForm.principal),
-          remaining: Number(loanForm.remaining || loanForm.principal),
-          monthly_payment: loanForm.monthly_payment ? Number(loanForm.monthly_payment) : null,
-          start_date: loanForm.start_date,
-          status: "active",
-        }),
-      });
-      setLoanForm(EMPTY_LOAN);
-      loadLoans();
-      toast("Loan added", "ok");
-    } catch {
-      toast("Could not add loan", "err");
-    } finally {
-      setBusy(false);
-    }
+  const removeTransaction = async (txId) => {
+    if (!selected) return;
+    await fetch(`/api/banking/accounts/${selected.id}/transactions/${txId}`, { method: "DELETE" }).catch(() => {});
+    loadAccounts();
+    loadTransactions(selected.id);
   };
 
   return (
@@ -139,9 +116,22 @@ export function BankingTab({ country, currency, flag }) {
             <div
               key={a.id}
               className={i === 0 ? "card-ink" : "card"}
-              style={{ padding: "20px", cursor: "pointer", outline: selected?.id === a.id ? "2px solid var(--color-brand)" : "none" }}
+              style={{ padding: "20px", cursor: "pointer", outline: selected?.id === a.id ? "2px solid var(--color-brand)" : "none", position: "relative" }}
               onClick={() => setSelected(a)}
             >
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeAccount(a.id);
+                }}
+                style={{
+                  position: "absolute", top: "12px", right: "12px", fontSize: "11px", fontWeight: "700",
+                  color: i === 0 ? "rgba(255,255,255,0.7)" : "var(--color-danger)",
+                }}
+              >
+                Remove
+              </button>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <p style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.14em", color: i === 0 ? "rgba(255,255,255,0.6)" : "var(--color-muted)" }}>
                   {a.currency} Account
@@ -201,12 +191,13 @@ export function BankingTab({ country, currency, flag }) {
                   <th>Label</th>
                   <th>Amount</th>
                   <th>Date</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan={3} style={{ padding: "24px 16px", textAlign: "center", color: "var(--color-muted)" }}>
+                    <td colSpan={4} style={{ padding: "24px 16px", textAlign: "center", color: "var(--color-muted)" }}>
                       No transactions yet.
                     </td>
                   </tr>
@@ -218,6 +209,11 @@ export function BankingTab({ country, currency, flag }) {
                         {t.amount > 0 ? "+" : ""}{t.amount.toLocaleString()}
                       </td>
                       <td>{t.entry_date}</td>
+                      <td>
+                        <button type="button" onClick={() => removeTransaction(t.id)} style={{ color: "var(--color-danger)", fontSize: "12px", fontWeight: "600" }}>
+                          Remove
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -226,62 +222,6 @@ export function BankingTab({ country, currency, flag }) {
           </div>
         </div>
       ) : null}
-
-      <div>
-        <h2 style={{ fontSize: "18px", fontWeight: "700", marginBottom: "12px" }}>Loans</h2>
-        <form onSubmit={addLoan} className="card" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px", alignItems: "end", marginBottom: "16px" }}>
-          <Field label="lender">
-            <BoxInput value={loanForm.lender} onChange={(e) => setLoanForm((f) => ({ ...f, lender: e.target.value }))} />
-          </Field>
-          <Field label="principal">
-            <BoxInput type="number" step="0.01" value={loanForm.principal} onChange={(e) => setLoanForm((f) => ({ ...f, principal: e.target.value }))} />
-          </Field>
-          <Field label="remaining">
-            <BoxInput type="number" step="0.01" value={loanForm.remaining} onChange={(e) => setLoanForm((f) => ({ ...f, remaining: e.target.value }))} placeholder="defaults to principal" />
-          </Field>
-          <Field label="monthly payment">
-            <BoxInput type="number" step="0.01" value={loanForm.monthly_payment} onChange={(e) => setLoanForm((f) => ({ ...f, monthly_payment: e.target.value }))} />
-          </Field>
-          <Field label="start date">
-            <BoxInput type="date" value={loanForm.start_date} onChange={(e) => setLoanForm((f) => ({ ...f, start_date: e.target.value }))} />
-          </Field>
-          <Button variant="brand" type="submit" loading={busy}>
-            Add loan
-          </Button>
-        </form>
-        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Lender</th>
-                <th>Principal</th>
-                <th>Remaining</th>
-                <th>Monthly payment</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loans.length === 0 ? (
-                <tr>
-                  <td colSpan={5} style={{ padding: "24px 16px", textAlign: "center", color: "var(--color-muted)" }}>
-                    No loans on record.
-                  </td>
-                </tr>
-              ) : (
-                loans.map((l) => (
-                  <tr key={l.id}>
-                    <td>{l.lender}</td>
-                    <td>{currency} {l.principal.toLocaleString()}</td>
-                    <td>{currency} {l.remaining.toLocaleString()}</td>
-                    <td>{l.monthly_payment ? `${currency} ${l.monthly_payment.toLocaleString()}` : "—"}</td>
-                    <td style={{ textTransform: "capitalize" }}>{l.status}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
   );
 }

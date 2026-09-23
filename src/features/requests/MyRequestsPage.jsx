@@ -29,6 +29,12 @@ export function MyRequestsPage() {
 
   useEffect(load, []);
 
+  const remove = async (id) => {
+    if (!window.confirm("Remove this request?")) return;
+    await fetch(`/api/agency-requests/${id}`, { method: "DELETE" }).catch(() => {});
+    load();
+  };
+
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
   const submit = async (e) => {
@@ -70,7 +76,7 @@ export function MyRequestsPage() {
           <Field label="submission date">
             <BoxInput type="date" value={form.submitted_date} onChange={set("submitted_date")} />
           </Field>
-          <Button variant="brand" type="submit" loading={busy}>
+          <Button variant="brand" type="submit" loading={busy} style={{ top: "-20px" }}>
             Submit request
           </Button>
         </form>
@@ -84,12 +90,13 @@ export function MyRequestsPage() {
               <th>Description</th>
               <th>Submitted</th>
               <th>Status</th>
+              {isAdmin ? <th></th> : null}
             </tr>
           </thead>
           <tbody>
             {requests.length === 0 ? (
               <tr>
-                <td colSpan={4} style={{ padding: "32px 16px", textAlign: "center", color: "var(--color-muted)" }}>
+                <td colSpan={isAdmin ? 5 : 4} style={{ padding: "32px 16px", textAlign: "center", color: "var(--color-muted)" }}>
                   No requests yet.
                 </td>
               </tr>
@@ -102,6 +109,13 @@ export function MyRequestsPage() {
                   <td>
                     <span className={`badge ${BADGE_TONE[r.status]}`}>{r.status}</span>
                   </td>
+                  {isAdmin ? (
+                    <td>
+                      <button type="button" onClick={() => remove(r.id)} style={{ color: "var(--color-danger)", fontSize: "12px", fontWeight: "600" }}>
+                        Remove
+                      </button>
+                    </td>
+                  ) : null}
                 </tr>
               ))
             )}

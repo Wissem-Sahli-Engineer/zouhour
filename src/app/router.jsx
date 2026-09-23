@@ -11,6 +11,7 @@ import { EditClientPage } from "../features/clients/EditClientPage";
 import { AccountingPage } from "../features/accounting/AccountingPage";
 import { MyRequestsPage } from "../features/requests/MyRequestsPage";
 import { EmployeeRequestsPage } from "../features/requests/EmployeeRequestsPage";
+import { PayrollPage } from "../features/payroll/PayrollPage";
 import { ChatbotPage } from "../features/chatbot/ChatbotPage";
 import { ToastHost } from "../components/ui/Toast";
 
@@ -33,6 +34,7 @@ export function AppRouter() {
             <Route path="/accounting/libya" element={<AccountingPage defaultCountry="libya" />} />
             <Route path="/MyRequests" element={<MyRequestsPage />} />
             <Route path="/EmployeeRequests" element={<EmployeeRequestsPage />} />
+            <Route path="/Payroll" element={<PayrollPage />} />
             <Route path="/chatbot" element={<ChatbotPage />} />
           </Route>
         </Route>

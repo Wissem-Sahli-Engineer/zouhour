@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { PageTitle } from "../../components/ui/Card";
 import { IconPlus } from "../../components/ui/Icons";
 import { FALLBACK_CLIENTS, enrich } from "./mock";
@@ -21,6 +21,7 @@ const VISA_BADGE = {
 };
 
 export function ClientsPage() {
+  const navigate = useNavigate();
   const [clients, setClients] = useState([]);
   const [query, setQuery] = useState("");
 
@@ -100,30 +101,25 @@ export function ClientsPage() {
                 </tr>
               ) : (
                 filtered.map((c) => (
-                  <tr key={c.id}>
+                  <tr
+                    key={c.id}
+                    onClick={() => navigate(`/clients/${c.id}`)}
+                    style={{ cursor: "pointer" }}
+                  >
                     <td>
-                      <Link to={`/clients/${c.id}`} style={{ display: "block" }}>
-                        {c.user_photo ? (
-                          <img src={c.user_photo} alt="" className="table-thumbnail" />
-                        ) : (
-                          <div
-                            className="table-thumbnail flex-center"
-                            style={{ backgroundColor: "var(--color-surface)", fontSize: "10px", color: "var(--color-muted)" }}
-                          >
-                            —
-                          </div>
-                        )}
-                      </Link>
+                      {c.user_photo ? (
+                        <img src={c.user_photo} alt="" className="table-thumbnail" />
+                      ) : (
+                        <div
+                          className="table-thumbnail flex-center"
+                          style={{ backgroundColor: "var(--color-surface)", fontSize: "10px", color: "var(--color-muted)" }}
+                        >
+                          —
+                        </div>
+                      )}
                     </td>
-                    <td>
-                      <Link
-                        to={`/clients/${c.id}`}
-                        style={{ fontWeight: "600", color: "var(--color-ink)", transition: "color 0.15s" }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = "var(--color-brand)")}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = "var(--color-ink)")}
-                      >
-                        {c.given_name} {c.surname}
-                      </Link>
+                    <td style={{ fontWeight: "600", color: "var(--color-ink)" }}>
+                      {c.given_name} {c.surname}
                     </td>
                     <td style={{ fontFamily: "monospace", fontSize: "13px" }}>{c.passport_number}</td>
                     <td style={{ color: "var(--color-muted)" }}>{c.phone}</td>
