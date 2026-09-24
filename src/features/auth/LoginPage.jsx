@@ -143,7 +143,7 @@ export function LoginPage() {
                   value={form.email}
                   onChange={onChange("email")}
                   autoComplete="username"
-                  placeholder="agent@zouhour.com"
+                  placeholder="agent@gmail.com"
                   error={errors.email}
                 />
               </div>

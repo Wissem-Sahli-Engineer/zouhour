@@ -403,6 +403,36 @@ def reject_user(user_id: int, _: User = Depends(require_admin), session: Session
     return user_out(user)
 
 
+@app.delete("/auth/users/{user_id}")
+def delete_user(user_id: int, admin: User = Depends(require_admin), session: Session = Depends(get_session)):
+    if user_id == admin.id:
+        raise HTTPException(status_code=400, detail="You can't remove your own account")
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    session.delete(user)
+    session.commit()
+    return {"status": "success"}
+
+
+@app.post("/auth/users/{user_id}/role")
+def set_user_role(
+    user_id: int, data: dict, admin: User = Depends(require_admin), session: Session = Depends(get_session)
+):
+    role = data.get("role")
+    if role not in ("Admin", "Agent"):
+        raise HTTPException(status_code=422, detail="role must be 'Admin' or 'Agent'")
+    if user_id == admin.id:
+        raise HTTPException(status_code=400, detail="You can't change your own role")
+    user = session.get(User, user_id)
+    if not user or user.status != "active":
+        raise HTTPException(status_code=404, detail="Active user not found")
+    user.role = role
+    session.add(user)
+    session.commit()
+    return user_out(user)
+
+
 @app.post("/chat")
 async def chat(payload: dict):
     """
