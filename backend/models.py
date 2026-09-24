@@ -211,3 +211,17 @@ class Payslip(PayslipBase, table=True):
 
 class PayslipCreate(PayslipBase):
     pass
+
+
+class User(SQLModel, table=True):
+    __tablename__ = "users"
+
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(max_length=150)
+    email: str = Field(max_length=200, unique=True, index=True)
+    password_hash: str = Field(max_length=200)
+    role: str = Field(default="Agent", max_length=20)  # "Admin" | "Agent"
+    status: str = Field(default="pending", max_length=20)  # "pending" | "active" | "rejected"
+    confirmation_token: str | None = Field(default=None, max_length=100, index=True)
+    confirmation_expires: datetime | None = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

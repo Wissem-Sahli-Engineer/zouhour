@@ -4,6 +4,7 @@ import { Button } from "../../components/ui/Button";
 import { BoxInput, BoxSelect, Field } from "../../components/ui/Input";
 import { toast } from "../../components/ui/Toast";
 import { PASSPORT_FIELDS, BUSINESS_FIELDS } from "./fields";
+import { withToken } from "../../store/auth";
 
 const ALL_FIELDS = [...PASSPORT_FIELDS, ...BUSINESS_FIELDS, "visa_status"];
 
@@ -22,7 +23,7 @@ export function EditClientPage() {
         const found = (Array.isArray(clients) ? clients : []).find((c) => String(c.id) === String(id));
         if (found) {
           setForm(Object.fromEntries(ALL_FIELDS.map((k) => [k, found[k] ?? ""])));
-          setPhotoUrl(found.user_photo || "");
+          setPhotoUrl(found.user_photo ? withToken(found.user_photo) : "");
         } else {
           toast("Client not found", "err");
           navigate("/clients");

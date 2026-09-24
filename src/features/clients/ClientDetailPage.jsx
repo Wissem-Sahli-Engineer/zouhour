@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Magnet from "../../components/ui/magnet";
 import { toast } from "../../components/ui/Toast";
+import { withToken } from "../../store/auth";
 
 export function ClientDetailPage() {
   const { id } = useParams();
@@ -124,7 +125,7 @@ export function ClientDetailPage() {
           <div className="card" style={{ padding: 0, overflow: "hidden" }}>
             {client.user_photo ? (
               <img
-                src={client.user_photo}
+                src={withToken(client.user_photo)}
                 alt="Passport portrait"
                 style={{ height: "280px", width: "100%", objectFit: "cover" }}
               />
@@ -173,7 +174,7 @@ export function ClientDetailPage() {
               <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px" }}>
                 {files.map((f) => (
                   <li key={f.id} className="flex-between" style={{ borderBottom: "1px solid var(--color-line)", padding: "8px 0" }}>
-                    <a href={f.url} target="_blank" rel="noreferrer" style={{ color: "var(--color-brand)" }}>
+                    <a href={withToken(f.url)} target="_blank" rel="noreferrer" style={{ color: "var(--color-brand)" }}>
                       {f.filename}
                     </a>
                     <button type="button" onClick={() => removeFile(f.id)} style={{ color: "var(--color-danger)", fontSize: "12px", fontWeight: "600" }}>

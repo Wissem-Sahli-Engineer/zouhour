@@ -18,6 +18,7 @@ An internal ERP for **Tunisie Conseil et Assistance (TCA)** — client/visa case
   - **Fiche de paie** (Payroll) — upload an Excel timesheet ("pointage"), enter each employee's hourly rate, generate a payslip PDF.
 - **AI Chatbot** — a full assistant page (persists across navigation) and a small popup panel with a "Live helper" mode that attaches a snapshot of the current window to your question.
 - **Role-based sidebar** — `Admin` sees everything; any other role sees Dashboard/Stats/Clients + Employee Requests + Chatbot only.
+- **Authentication** — a single seeded Admin account; everyone else requests access, and the admin approves or rejects by email (or in-app under **Users**) before they can sign in.
 
 ---
 
@@ -27,7 +28,7 @@ An internal ERP for **Tunisie Conseil et Assistance (TCA)** — client/visa case
    ```bash
    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
    ```
-2. **Node.js** (v18+)
+2. **Node.js** (v18+)AI Medical Chatbot using LLMs and RAG
    ```bash
    brew install node
    ```
@@ -100,7 +101,41 @@ pg_dump -U zouhour -h localhost zouhour > backup.sql
 
 Client photos, other client files, generated invoice PDFs, and generated payslip PDFs are all saved under `uploads/` (git-ignored); the database stores only their paths.
 
-**Everything the app persists lives in this one Postgres database** — clients, treasury entries, bank accounts/transactions, invoices, agency/employee requests, and payslips. There is no JSON file, mock data, or hardcoded fallback anywhere in the app anymore; if the API can't be reached, pages show an empty/error state instead of fake data.
+**Everything the app persists lives in this one Postgres database** — clients, treasury entries, bank accounts/transactions, invoices, agency/employee requests, payslips, and now user accounts. There is no JSON file, mock data, or hardcoded fallback anywhere in the app anymore; if the API can't be reached, pages show an empty/error state instead of fake data.
+
+### 4. Authentication secret & the one Admin account
+
+Auth lives entirely in `backend/auth.py` (hashing, sessions, approval emails) and the `users` table (`backend/models.py`) — there is no `admin.json` anymore.
+
+Add a signing secret to `.env` (this is what signs login sessions — treat it like a password):
+```bash
+python3 -c "import secrets; print(secrets.token_urlsafe(48))"
+# paste the output as JWT_SECRET= in .env
+```
+
+Also set in `.env`:
+```
+ADMIN_EMAIL=contact.ing.wissem@gmail.com   # change this to the real admin's email
+APP_BASE_URL=http://localhost:5173
+PUBLIC_API_BASE_URL=http://localhost:8001
+```
+
+Then create the one Admin account (prompts for a password, hidden input):
+```bash
+.venv/bin/python -m backend.seed_admin
+```
+Re-run it any time to change the admin's password. This is the **only** account created outside the normal signup flow.
+
+**How signup works for everyone else:** they submit name/email/password on the login page → the account is created with `status = "pending"` → an email is sent to `ADMIN_EMAIL` with **Approve** / **Reject** links → clicking one activates or rejects the account. No SMTP configured yet? The email is printed to the backend console instead, so you can still click the link during local dev. The admin can also approve/reject from inside the app under **Users** (admin-only nav item) instead of using email.
+
+**Configure outgoing email** (so the approval email actually gets delivered) by setting in `.env`:
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-sending-address@gmail.com
+SMTP_PASSWORD=an-app-password        # not your normal Gmail password — generate an App Password
+SMTP_FROM=your-sending-address@gmail.com
+```
 
 ---
 
@@ -151,6 +186,7 @@ Any Postgres client works against the same `DATABASE_URL` (host `localhost`, por
 | `agency_requests` | "My Requests" (admin's own log) |
 | `employee_requests` | Vacations / salary advances / loans |
 | `payslips` | Generated fiche de paie records |
+| `users` | Login accounts — hashed passwords, role, and approval status |
 | `alembic_version` | Internal — tracks which migration is applied. Don't edit. |
 
 ### Changing the schema
@@ -170,14 +206,15 @@ Four things need to be running at once:
 | 3 | Backend (FastAPI) | `.venv/bin/python -m backend.backend` | `localhost:8001` (docs at `/docs`) |
 | 4 | Frontend (Vite) | `npm run dev` | `localhost:5173` |
 
-Open [http://localhost:5173](http://localhost:5173) and sign in with a user from `admin.json` (`role: "Admin"` unlocks Accounting, My Requests, and Fiche de paie).
+Open [http://localhost:5173](http://localhost:5173) and sign in with the admin account you created via `backend.seed_admin` (`role: "Admin"` unlocks Accounting, My Requests, Fiche de paie, and Users). Everyone else signs up and waits for approval.
 
 ---
 
 ## Configuration reference
 
-- `.env` — `DATABASE_URL` for Postgres.
-- `admin.json` — local user accounts for the dev login (`name`, `email`, `password`, `role`). Signups append here with `role: "Agent"` by default.
+- `.env` — `DATABASE_URL`, `JWT_SECRET`, `ADMIN_EMAIL`, `APP_BASE_URL`, `PUBLIC_API_BASE_URL`, `SMTP_*` (see Authentication above).
+- `backend/auth.py` — password hashing, JWT session tokens, and the signup-approval email. Self-contained; nothing auth-related lives in `backend.py` itself beyond the route handlers.
+- `backend/seed_admin.py` — creates/updates the one Admin account.
 - `src/lib/config.js` — `CHAT_API_URL` (proxied to the backend's `/chat`).
 - `backend/backend.py` — `CHAT_MODEL` constant (Ollama model used for the assistant and OCR extraction, default `qwen2.5vl:3b-8k`).
 - `backend/invoice_templates/facture.tex` / `recu.tex` — the actual LaTeX source for generated invoices/receipts. Edit these to change the design; placeholders like `%%CLIENT_NAME%%` are substituted at generation time.
@@ -194,3 +231,15 @@ Open [http://localhost:5173](http://localhost:5173) and sign in with a user from
 - **Invoice/payslip PDF fails with a LaTeX error**: run the same `pdflatex`/`xelatex` command by hand inside `uploads/invoices/<number>/` or `uploads/payslips/<number>/` to see the full log — the work directory and rendered `.tex` file are left in place.
 - **Chat says it can't reach the assistant**: confirm `ollama serve` is running and `qwen2.5vl:3b-8k` is pulled (`ollama list`).
 - **Backend not finding the app package**: always start it as `python -m backend.backend` (or `uvicorn backend.backend:app`) from the project root, never `cd backend && python backend.py`.
+- **Backend refuses to start with a `JWT_SECRET is not set` error**: add it to `.env` (see Authentication above).
+- **Signup approval email never arrives**: check the backend console — with no `SMTP_HOST` set, the approval email (including the Approve/Reject links) is printed there instead of sent.
+- **"Not authenticated" (401) on every page**: your session expired (`JWT_EXPIRES_HOURS`, default 12h) or `.env`'s `JWT_SECRET` changed since you logged in — just log in again.
+
+---
+
+## Before deploying
+
+- Set a real `JWT_SECRET`, `ADMIN_EMAIL`, and SMTP credentials in the production `.env` — don't reuse local dev values.
+- Tighten CORS in `backend/backend.py` (currently `allow_origins=["*"]`) to your actual frontend domain.
+- Serve everything over HTTPS — login/signup send passwords in plaintext-over-TLS; without TLS they're plaintext-over-nothing.
+- Run `.venv/bin/python -m backend.seed_admin` once on the production database to create the real admin account, then keep that password somewhere safe (a password manager, not chat/notes).

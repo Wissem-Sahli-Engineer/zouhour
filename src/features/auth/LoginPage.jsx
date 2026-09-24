@@ -22,9 +22,8 @@ export function LoginPage() {
   const [errors, setErrors] = useState({});
   const [form, setForm] = useState({
     name: "",
-    email: "wissem@gmail.com",
-    password: "azerty",
-    role: "Agent",
+    email: "",
+    password: "",
     remember: true,
   });
 
@@ -59,30 +58,28 @@ export function LoginPage() {
     e.preventDefault();
     const next = {};
     if (!form.email.includes("@")) next.email = true;
-    if (!form.password || form.password.length < 3) next.password = true;
-    if (mode === "signup") {
-      if (!form.name.trim()) next.name = true;
-    }
+    if (!form.password || form.password.length < (mode === "signup" ? 8 : 1)) next.password = true;
+    if (mode === "signup" && !form.name.trim()) next.name = true;
     setErrors(next);
     if (Object.keys(next).length) {
       play("shake");
-      toast("Please check the highlighted fields", "err");
+      toast(
+        mode === "signup" && next.password
+          ? "Password must be at least 8 characters"
+          : "Please check the highlighted fields",
+        "err"
+      );
       return;
     }
 
     setLoading(true);
     try {
       if (mode === "signup") {
-        await signup({
-          name: form.name,
-          email: form.email,
-          password: form.password,
-          role: form.role,
-          remember: form.remember,
-        });
+        await signup({ name: form.name, email: form.email, password: form.password });
         play("nod");
-        toast("Account created and saved to admin.json!", "ok");
-        navigate("/");
+        toast("Request submitted — an admin needs to approve it before you can sign in.", "ok");
+        setMode("login");
+        setForm((f) => ({ ...f, password: "" }));
         return;
       }
 
@@ -121,8 +118,8 @@ export function LoginPage() {
             <img src="./logo.png" className="login-logo" data-enter alt="Logo" />
             <p className="login-subtitle" data-enter>
               {mode === "signup"
-                ? "Sign up to add your account to admin.json"
-                : "Sign in with admin.json credentials"}
+                ? "Request an account — an admin will need to approve it"
+                : "Sign in to your account"}
             </p>
           </div>
 
@@ -180,17 +177,7 @@ export function LoginPage() {
               </div>
             </Field>
 
-            {mode === "signup" ? (
-              <Field label="Role">
-                <div data-enter>
-                  <UnderlineInput
-                    value={form.role}
-                    onChange={onChange("role")}
-                    placeholder="Agent / Officer / Admin"
-                  />
-                </div>
-              </Field>
-            ) : (
+            {mode !== "signup" ? (
               <div className="login-row-remember" data-enter>
                 <label className="checkbox-label">
                   <input
@@ -200,25 +187,12 @@ export function LoginPage() {
                   />
                   Remember me
                 </label>
-                <button
-                  type="button"
-                  className="forgot-link"
-                  onClick={() => {
-                    play("nod");
-                    toast(
-                      `Check credentials in admin.json`,
-                      "ok"
-                    );
-                  }}
-                >
-                  Forgot password?
-                </button>
               </div>
-            )}
+            ) : null}
 
             <div data-enter>
               <Button type="submit" variant="brand" loading={loading}>
-                {mode === "signup" ? "Sign up" : "Sign in"}
+                {mode === "signup" ? "Request account" : "Sign in"}
               </Button>
             </div>
 

@@ -1,6 +1,6 @@
-from fastapi import Depends, FastAPI, UploadFile, File, HTTPException
+from fastapi import Depends, FastAPI, Request, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
@@ -11,7 +11,7 @@ import os
 import re
 import requests
 import traceback
-from datetime import date
+from datetime import date, datetime, timezone
 
 from backend.db import get_session
 from backend.models import (
@@ -31,10 +31,22 @@ from backend.models import (
     PayslipCreate,
     TreasuryEntry,
     TreasuryEntryCreate,
+    User,
 )
 from backend.photos import UPLOADS_DIR, delete_photo, save_client_file, save_client_photo
 from backend.invoices import generate_invoice_pdf
 from backend.payroll import generate_payslip_pdf, parse_pointage
+from backend.auth import (
+    create_access_token,
+    decode_access_token,
+    get_current_user,
+    hash_password,
+    new_confirmation_token,
+    require_admin,
+    send_signup_request_email,
+    user_out,
+    verify_password,
+)
 
 app = FastAPI()
 
@@ -45,6 +57,38 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Paths that don't require a logged-in session.
+_PUBLIC_PATHS = {"/auth/signup", "/auth/login", "/docs", "/openapi.json", "/redoc"}
+_PUBLIC_PREFIXES = ("/auth/confirm/", "/auth/reject/")
+# Only an Admin may use these (mirrors what the sidebar shows an Admin vs an Agent).
+_ADMIN_ONLY_PREFIXES = ("/treasury", "/banking", "/invoices", "/payroll", "/agency-requests")
+
+
+@app.middleware("http")
+async def require_auth(request: Request, call_next):
+    path = request.url.path
+    if path in _PUBLIC_PATHS or path.startswith(_PUBLIC_PREFIXES) or request.method == "OPTIONS":
+        return await call_next(request)
+
+    token = request.query_params.get("token")
+    auth_header = request.headers.get("authorization", "")
+    if not token and auth_header.lower().startswith("bearer "):
+        token = auth_header[7:]
+
+    if not token:
+        return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
+
+    try:
+        payload = decode_access_token(token)
+    except HTTPException as e:
+        return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
+
+    if path.startswith(_ADMIN_ONLY_PREFIXES) and payload.get("role") != "Admin":
+        return JSONResponse(status_code=403, content={"detail": "Admin access required"})
+
+    request.state.user_email = payload.get("email")
+    return await call_next(request)
 
 QWEN_API_URL = "http://localhost:11434/v1/chat/completions"
 CHAT_MODEL = "qwen2.5vl:3b-8k"
@@ -233,10 +277,130 @@ def delete_client_file(client_id: int, file_id: int, session: Session = Depends(
     return {"status": "success"}
 
 
-@app.post("/signup-request")
-async def signup_request(data: dict):
-    print("Signup request received:", data)
-    return {"status": "success", "message": "Signup request recorded"}
+@app.post("/auth/signup")
+def signup(data: dict, session: Session = Depends(get_session)):
+    name = (data.get("name") or "").strip()
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+
+    if not name or not email or "@" not in email:
+        raise HTTPException(status_code=422, detail="A valid name and email are required")
+    if len(password) < 8:
+        raise HTTPException(status_code=422, detail="Password must be at least 8 characters")
+
+    existing = session.exec(select(User).where(User.email == email)).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="An account with this email already exists")
+
+    token, expires = new_confirmation_token()
+    user = User(
+        name=name,
+        email=email,
+        password_hash=hash_password(password),
+        role="Agent",
+        status="pending",
+        confirmation_token=token,
+        confirmation_expires=expires,
+    )
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    try:
+        send_signup_request_email(user, token)
+    except Exception:
+        traceback.print_exc()
+
+    return {"status": "pending", "message": "Request submitted. An admin must approve it before you can sign in."}
+
+
+@app.post("/auth/login")
+def login(data: dict, session: Session = Depends(get_session)):
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+
+    user = session.exec(select(User).where(User.email == email)).first()
+    if not user or not verify_password(password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    if user.status == "pending":
+        raise HTTPException(status_code=403, detail="Your account is awaiting admin approval")
+    if user.status != "active":
+        raise HTTPException(status_code=403, detail="This account is not active")
+
+    return {"token": create_access_token(user), "user": user_out(user)}
+
+
+@app.get("/auth/me")
+def me(user: User = Depends(get_current_user)):
+    return user_out(user)
+
+
+@app.get("/auth/confirm/{token}")
+def confirm_signup(token: str, session: Session = Depends(get_session)):
+    user = session.exec(select(User).where(User.confirmation_token == token)).first()
+    if not user or user.status != "pending":
+        raise HTTPException(status_code=404, detail="This request no longer exists")
+    if user.confirmation_expires and user.confirmation_expires < datetime.now(timezone.utc):
+        raise HTTPException(status_code=410, detail="This confirmation link has expired")
+
+    user.status = "active"
+    user.confirmation_token = None
+    user.confirmation_expires = None
+    session.add(user)
+    session.commit()
+    return {"status": "success", "message": f"{user.email} approved"}
+
+
+@app.get("/auth/reject/{token}")
+def reject_signup(token: str, session: Session = Depends(get_session)):
+    user = session.exec(select(User).where(User.confirmation_token == token)).first()
+    if not user or user.status != "pending":
+        raise HTTPException(status_code=404, detail="This request no longer exists")
+
+    user.status = "rejected"
+    user.confirmation_token = None
+    user.confirmation_expires = None
+    session.add(user)
+    session.commit()
+    return {"status": "success", "message": f"{user.email} rejected"}
+
+
+@app.get("/auth/pending")
+def list_pending_users(_: User = Depends(require_admin), session: Session = Depends(get_session)):
+    users = session.exec(select(User).where(User.status == "pending").order_by(User.created_at)).all()
+    return [user_out(u) for u in users]
+
+
+@app.get("/auth/users")
+def list_users(_: User = Depends(require_admin), session: Session = Depends(get_session)):
+    users = session.exec(select(User).order_by(User.created_at)).all()
+    return [user_out(u) for u in users]
+
+
+@app.post("/auth/users/{user_id}/approve")
+def approve_user(user_id: int, _: User = Depends(require_admin), session: Session = Depends(get_session)):
+    user = session.get(User, user_id)
+    if not user or user.status != "pending":
+        raise HTTPException(status_code=404, detail="Pending request not found")
+    user.status = "active"
+    user.confirmation_token = None
+    user.confirmation_expires = None
+    session.add(user)
+    session.commit()
+    return user_out(user)
+
+
+@app.post("/auth/users/{user_id}/reject")
+def reject_user(user_id: int, _: User = Depends(require_admin), session: Session = Depends(get_session)):
+    user = session.get(User, user_id)
+    if not user or user.status != "pending":
+        raise HTTPException(status_code=404, detail="Pending request not found")
+    user.status = "rejected"
+    user.confirmation_token = None
+    user.confirmation_expires = None
+    session.add(user)
+    session.commit()
+    return user_out(user)
 
 
 @app.post("/chat")

@@ -208,6 +208,13 @@ export const IconCheck = (p) => (
   </Icon>
 );
 
+export const IconShield = (p) => (
+  <Icon {...p}>
+    <path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6l7-3z" />
+    <path d="M9 12l2 2 4-4" />
+  </Icon>
+);
+
 export const IconExpand = (p) => (
   <Icon {...p}>
     <path d="M9 3H3v6M15 3h6v6M21 15v6h-6M3 15v6h6" />

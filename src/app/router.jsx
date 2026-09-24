@@ -12,6 +12,7 @@ import { AccountingPage } from "../features/accounting/AccountingPage";
 import { MyRequestsPage } from "../features/requests/MyRequestsPage";
 import { EmployeeRequestsPage } from "../features/requests/EmployeeRequestsPage";
 import { PayrollPage } from "../features/payroll/PayrollPage";
+import { UsersPage } from "../features/admin/UsersPage";
 import { ChatbotPage } from "../features/chatbot/ChatbotPage";
 import { ToastHost } from "../components/ui/Toast";
 
@@ -35,6 +36,7 @@ export function AppRouter() {
             <Route path="/MyRequests" element={<MyRequestsPage />} />
             <Route path="/EmployeeRequests" element={<EmployeeRequestsPage />} />
             <Route path="/Payroll" element={<PayrollPage />} />
+            <Route path="/Users" element={<UsersPage />} />
             <Route path="/chatbot" element={<ChatbotPage />} />
           </Route>
         </Route>

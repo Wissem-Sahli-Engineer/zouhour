@@ -3,6 +3,7 @@ import { PageTitle } from "../../components/ui/Card";
 import { BoxInput, Field } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { toast } from "../../components/ui/Toast";
+import { withToken } from "../../store/auth";
 
 export function PayrollPage() {
   const [rows, setRows] = useState([]);
@@ -62,7 +63,7 @@ export function PayrollPage() {
       });
       if (!res.ok) throw new Error("fail");
       const payslip = await res.json();
-      window.open(`/api/payroll/payslips/${payslip.id}/pdf`, "_blank");
+      window.open(withToken(`/api/payroll/payslips/${payslip.id}/pdf`), "_blank");
       loadHistory();
       toast("Payslip generated", "ok");
     } catch {

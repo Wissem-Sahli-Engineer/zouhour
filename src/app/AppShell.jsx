@@ -14,6 +14,7 @@ import {
   IconLogout,
   IconMenu,
   IconPeople,
+  IconShield,
   IconUsersGear,
   IconWallet,
   LogoMark,
@@ -36,6 +37,7 @@ const NAV_HR = [
   { to: "/MyRequests", label: "My Requests", icon: IconClipboard },
   { to: "/EmployeeRequests", label: "Employee Requests", icon: IconUsersGear },
   { to: "/Payroll", label: "Fiche de paie", icon: IconWallet },
+  { to: "/Users", label: "Users", icon: IconShield },
 ];
 
 export function AppShell() {

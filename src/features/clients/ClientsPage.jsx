@@ -4,6 +4,7 @@ import { PageTitle } from "../../components/ui/Card";
 import { IconPlus } from "../../components/ui/Icons";
 import { Card } from "../../components/ui/nav";
 import Magnet from "../../components/ui/magnet";
+import { withToken } from "../../store/auth";
 
 const CLIENTS_TABS = [
   { id: "normal", label: "All clients" },
@@ -108,7 +109,7 @@ export function ClientsPage() {
                   >
                     <td>
                       {c.user_photo ? (
-                        <img src={c.user_photo} alt="" className="table-thumbnail" />
+                        <img src={withToken(c.user_photo)} alt="" className="table-thumbnail" />
                       ) : (
                         <div
                           className="table-thumbnail flex-center"
