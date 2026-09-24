@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { PageTitle } from "../../components/ui/Card";
 import { useScrollReveal } from "../../lib/useScrollReveal";
+import { useI18n } from "../../store/i18n";
 
 const COUNTRIES = ["tunisia", "libya"];
 
@@ -50,6 +51,7 @@ function Tip({ active, payload, label }) {
 export function DashboardPage() {
   const root = useRef(null);
   useScrollReveal(root);
+  const t = useI18n((s) => s.t);
 
   const [clients, setClients] = useState([]);
   const [treasuryMonthly, setTreasuryMonthly] = useState([]);
@@ -97,20 +99,20 @@ export function DashboardPage() {
   }));
 
   const stats = [
-    { label: "Total clients", value: clients.length, note: "in the database", accent: "#8B5CF6" },
-    { label: "Pending visas", value: statusCounts.find((s) => s.id === "pending")?.value || 0, note: "awaiting decision", accent: "#F0924B" },
-    { label: "Rejected", value: statusCounts.find((s) => s.id === "rejected")?.value || 0, note: "need follow-up", accent: "#ef4444" },
-    { label: "Invoices & receipts", value: invoiceCount, note: "issued to date", accent: "#22c55e" },
+    { label: t("dashboard.totalClients"), value: clients.length, note: "in the database", accent: "#8B5CF6" },
+    { label: t("dashboard.pendingVisas"), value: statusCounts.find((s) => s.id === "pending")?.value || 0, note: "awaiting decision", accent: "#F0924B" },
+    { label: t("dashboard.rejected"), value: statusCounts.find((s) => s.id === "rejected")?.value || 0, note: "need follow-up", accent: "#ef4444" },
+    { label: t("dashboard.invoicesReceipts"), value: invoiceCount, note: "issued to date", accent: "#22c55e" },
   ];
 
   return (
     <div ref={root} className="page-container-max">
-      <PageTitle kicker="Overview" title="This month at a glance" />
+      <PageTitle kicker={t("dashboard.kicker")} title={t("dashboard.title")} />
 
       <div className="grid-12">
         <div data-reveal className="col-7 card-ink">
           <p style={{ fontSize: "12px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.14em", color: "rgba(255,255,255,0.5)" }}>
-            Treasury net this month
+            {t("dashboard.treasuryNet")}
           </p>
           <p style={{ marginTop: "8px", fontSize: "var(--text-hero)", fontWeight: "700", lineHeight: "1" }}>
             {monthNet.toLocaleString()}
@@ -143,7 +145,7 @@ export function DashboardPage() {
           <div style={{ height: "280px" }}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={treasuryMonthly}>
-                <CartesianGrid stroke="#e7e7ea" vertical={false} />
+                <CartesianGrid stroke="var(--color-line)" vertical={false} />
                 <XAxis dataKey="month" tick={{ fill: "#8a8a8f", fontSize: 12 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: "#8a8a8f", fontSize: 12 }} axisLine={false} tickLine={false} />
                 <Tooltip content={<Tip />} />
@@ -156,13 +158,13 @@ export function DashboardPage() {
 
         <div data-reveal className="col-4 chart-card">
           <h2 style={{ marginBottom: "16px", fontSize: "16px", fontWeight: "700", color: "var(--color-ink)" }}>
-            Clients by visa status
+            {t("dashboard.byVisaStatus")}
           </h2>
           <div style={{ height: "180px" }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={statusCounts} layout="vertical" margin={{ left: 8, right: 8 }}>
                 <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" width={92} tick={{ fill: "#1a1a1a", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="name" width={92} tick={{ fill: "var(--color-ink)", fontSize: 12 }} axisLine={false} tickLine={false} />
                 <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={12}>
                   {statusCounts.map((s) => (
                     <Cell key={s.name} fill={s.color} />

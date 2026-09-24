@@ -200,10 +200,19 @@ def delete_client(client_id: int, session: Session = Depends(get_session)):
     client = session.get(Client, client_id)
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
+
+    files = session.exec(select(ClientFile).where(ClientFile.client_id == client_id)).all()
+    for f in files:
+        session.delete(f)
+    session.commit()  # remove client_files first — no ORM relationship() links these tables
+
     photo_path = client.photo_path
     session.delete(client)
     session.commit()
+
     delete_photo(photo_path)
+    for f in files:
+        delete_photo(f.path)
     return {"status": "success"}
 
 
@@ -327,7 +336,7 @@ def login(data: dict, session: Session = Depends(get_session)):
     if user.status != "active":
         raise HTTPException(status_code=403, detail="This account is not active")
 
-    return {"token": create_access_token(user), "user": user_out(user)}
+    return {"token": create_access_token(user, remember=bool(data.get("remember"))), "user": user_out(user)}
 
 
 @app.get("/auth/me")

@@ -38,7 +38,7 @@ def main():
             print(f"Updated existing admin account: {ADMIN_EMAIL}")
         else:
             user = User(
-                name="Admin",
+                name=os.environ.get("ADMIN_NAME", "Admin"),
                 email=ADMIN_EMAIL,
                 password_hash=hash_password(password),
                 role="Admin",

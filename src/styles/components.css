@@ -53,8 +53,8 @@
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background-color: #f7f7f8;
-  border-color: #d9d9de;
+  background-color: var(--color-surface);
+  border-color: var(--color-line);
 }
 
 .btn-danger {
@@ -136,7 +136,8 @@
 }
 
 .input-underline::placeholder {
-  color: rgba(138, 138, 143, 0.7);
+  color: var(--color-muted);
+  opacity: 0.7;
 }
 
 .input-box {
@@ -213,8 +214,8 @@
 
 .card-ink {
   border-radius: var(--radius-card);
-  background-color: var(--color-ink);
-  color: var(--color-white);
+  background-color: var(--color-card-ink-bg);
+  color: var(--color-card-ink-text);
   padding: 28px 32px;
 }
 
@@ -314,6 +315,14 @@
   inset: 0;
   background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.6), transparent 60%);
   pointer-events: none;
+}
+
+:root[data-theme="dark"] .cast-stage::before {
+  background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.08), transparent 60%);
+}
+
+:root[data-theme="dark"] .stage-ground {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.35), transparent);
 }
 
 .char {
@@ -417,7 +426,7 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-circle);
-  background-color: var(--color-white);
+  background-color: #ffffff;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
 }
 
@@ -425,7 +434,7 @@
   height: 7px;
   width: 7px;
   border-radius: var(--radius-circle);
-  background-color: var(--color-ink);
+  background-color: #1a1a1a;
   transition: transform 0.03s linear;
 }
 
@@ -435,7 +444,7 @@
   height: 3px;
   transform: translateX(-50%);
   border-radius: 0 0 10px 10px;
-  background-color: var(--color-ink);
+  background-color: #1a1a1a;
 }
 
 .stage-ground {
@@ -462,7 +471,7 @@
 
 .data-table th {
   border-bottom: 1.5px solid var(--color-line);
-  background-color: #f9fafb;
+  background-color: var(--color-surface);
   padding: 14px 16px;
   font-size: 13px;
   font-weight: 600;
@@ -481,7 +490,7 @@
 }
 
 .data-table tr:hover td {
-  background-color: #fafafb;
+  background-color: var(--color-surface);
 }
 
 .table-thumbnail {
@@ -489,7 +498,7 @@
   width: 40px;
   border-radius: var(--radius-thumb);
   object-fit: cover;
-  background-color: #eee;
+  background-color: var(--color-line);
 }
 
 /* Badges */
@@ -509,8 +518,8 @@
 }
 
 .badge-warning {
-  background-color: #fef3c7;
-  color: #d97706;
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning-text);
 }
 
 .badge-danger {
@@ -527,8 +536,8 @@
 .upload-dropzone {
   cursor: pointer;
   border-radius: var(--radius-drop);
-  border: 2px dashed #d1d5db;
-  background-color: #fafafa;
+  border: 2px dashed var(--color-line);
+  background-color: var(--color-surface);
   padding: 32px 24px;
   text-align: center;
   transition: border-color var(--duration-fast), background-color var(--duration-fast);
@@ -537,7 +546,7 @@
 .upload-dropzone:hover,
 .upload-dropzone.drag-active {
   border-color: var(--color-brand);
-  background-color: #f5f3ff;
+  background-color: var(--color-brand-wash);
 }
 
 .preview-grid {
@@ -566,7 +575,7 @@
   border-radius: 14px;
   border: 2px solid var(--color-line);
   object-fit: cover;
-  background-color: #f9fafb;
+  background-color: var(--color-surface);
 }
 
 .preview-img-portrait {
@@ -575,7 +584,7 @@
   border-radius: 14px;
   border: 2px solid var(--color-brand);
   object-fit: cover;
-  background-color: #f9fafb;
+  background-color: var(--color-surface);
 }
 
 /* ---------- Chatbot Panel ---------- */

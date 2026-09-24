@@ -3,6 +3,7 @@ import { PageTitle } from "../../components/ui/Card";
 import { BoxSelect } from "../../components/ui/Input";
 import { toast } from "../../components/ui/Toast";
 import { useAuth } from "../../store/auth";
+import { useI18n } from "../../store/i18n";
 
 const STATUS_TONE = {
   active: "badge-success",
@@ -11,6 +12,7 @@ const STATUS_TONE = {
 };
 
 export function UsersPage() {
+  const t = useI18n((s) => s.t);
   const currentUser = useAuth((s) => s.user);
   const [users, setUsers] = useState([]);
   const [busyId, setBusyId] = useState(null);
@@ -30,9 +32,9 @@ export function UsersPage() {
       const res = await fetch(`/api/auth/users/${id}/${action}`, { method: "POST" });
       if (!res.ok) throw new Error("fail");
       load();
-      toast(action === "approve" ? "Account approved" : "Account rejected", "ok");
+      toast(action === "approve" ? t("users.approved") : t("users.rejectedMsg"), "ok");
     } catch {
-      toast("Could not update this account", "err");
+      toast(t("users.updateFailed"), "err");
     } finally {
       setBusyId(null);
     }
@@ -48,24 +50,24 @@ export function UsersPage() {
       });
       if (!res.ok) throw new Error("fail");
       load();
-      toast(`Role changed to ${role}`, "ok");
+      toast(`${t("users.roleChanged")} ${role}`, "ok");
     } catch {
-      toast("Could not change this account's role", "err");
+      toast(t("users.roleChangeFailed"), "err");
     } finally {
       setBusyId(null);
     }
   };
 
   const remove = async (id) => {
-    if (!window.confirm("Remove this account permanently?")) return;
+    if (!window.confirm(t("users.removeConfirm"))) return;
     setBusyId(id);
     try {
       const res = await fetch(`/api/auth/users/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("fail");
       load();
-      toast("Account removed", "ok");
+      toast(t("users.removed"), "ok");
     } catch {
-      toast("Could not remove this account", "err");
+      toast(t("users.removeFailed"), "err");
     } finally {
       setBusyId(null);
     }
@@ -76,16 +78,16 @@ export function UsersPage() {
 
   return (
     <div className="page-container-max">
-      <PageTitle kicker="Administration" title="Users" />
+      <PageTitle kicker={t("users.kicker")} title={t("users.title")} />
 
       {pending.length > 0 ? (
         <div className="card table-wrapper" style={{ marginBottom: "24px" }}>
-          <h2 style={{ marginBottom: "12px", fontSize: "16px", fontWeight: "700" }}>Pending signup requests</h2>
+          <h2 style={{ marginBottom: "12px", fontSize: "16px", fontWeight: "700" }}>{t("users.pendingRequests")}</h2>
           <table className="data-table">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Email</th>
+                <th>{t("users.nameCol")}</th>
+                <th>{t("users.emailCol")}</th>
                 <th></th>
               </tr>
             </thead>
@@ -102,7 +104,7 @@ export function UsersPage() {
                       className="btn btn-brand"
                       style={{ width: "auto", padding: "6px 14px", fontSize: "12px" }}
                     >
-                      Approve
+                      {t("users.approve")}
                     </button>
                     <button
                       type="button"
@@ -110,7 +112,7 @@ export function UsersPage() {
                       onClick={() => act(u.id, "reject")}
                       style={{ color: "var(--color-danger)", fontSize: "12px", fontWeight: "600" }}
                     >
-                      Reject
+                      {t("users.reject")}
                     </button>
                   </td>
                 </tr>
@@ -121,14 +123,14 @@ export function UsersPage() {
       ) : null}
 
       <div className="card table-wrapper">
-        <h2 style={{ marginBottom: "12px", fontSize: "16px", fontWeight: "700" }}>All accounts</h2>
+        <h2 style={{ marginBottom: "12px", fontSize: "16px", fontWeight: "700" }}>{t("users.allAccounts")}</h2>
         <table className="data-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Status</th>
+              <th>{t("users.nameCol")}</th>
+              <th>{t("users.emailCol")}</th>
+              <th>{t("users.roleCol")}</th>
+              <th>{t("users.statusCol")}</th>
               <th></th>
             </tr>
           </thead>
@@ -136,7 +138,7 @@ export function UsersPage() {
             {others.length === 0 ? (
               <tr>
                 <td colSpan={5} style={{ padding: "32px 16px", textAlign: "center", color: "var(--color-muted)" }}>
-                  No accounts yet.
+                  {t("users.noAccounts")}
                 </td>
               </tr>
             ) : (
@@ -169,10 +171,10 @@ export function UsersPage() {
                         onClick={() => remove(u.id)}
                         style={{ color: "var(--color-danger)", fontSize: "12px", fontWeight: "600" }}
                       >
-                        Remove
+                        {t("users.remove")}
                       </button>
                     ) : (
-                      <span style={{ fontSize: "12px", color: "var(--color-muted)" }}>You</span>
+                      <span style={{ fontSize: "12px", color: "var(--color-muted)" }}>{t("users.you")}</span>
                     )}
                   </td>
                 </tr>

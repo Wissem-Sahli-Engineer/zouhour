@@ -62,12 +62,16 @@ def verify_password(password: str, password_hash: str) -> bool:
 # JWT sessions
 # ---------------------------------------------------------------------------
 
-def create_access_token(user: User) -> str:
+JWT_REMEMBER_DAYS = int(os.environ.get("JWT_REMEMBER_DAYS", "30"))
+
+
+def create_access_token(user: User, remember: bool = False) -> str:
+    lifetime = timedelta(days=JWT_REMEMBER_DAYS) if remember else timedelta(hours=JWT_EXPIRES_HOURS)
     payload = {
         "sub": str(user.id),
         "email": user.email,
         "role": user.role,
-        "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRES_HOURS),
+        "exp": datetime.now(timezone.utc) + lifetime,
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 

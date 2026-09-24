@@ -4,6 +4,7 @@ import { BoxInput, Field } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { toast } from "../../components/ui/Toast";
 import { useAuth } from "../../store/auth";
+import { useI18n } from "../../store/i18n";
 
 const BADGE_TONE = {
   approved: "badge-success",
@@ -14,6 +15,7 @@ const BADGE_TONE = {
 const EMPTY = { name: "", description: "", submitted_date: new Date().toISOString().slice(0, 10) };
 
 export function MyRequestsPage() {
+  const t = useI18n((s) => s.t);
   const user = useAuth((s) => s.user);
   const isAdmin = user?.role === "Admin";
   const [requests, setRequests] = useState([]);
@@ -30,7 +32,7 @@ export function MyRequestsPage() {
   useEffect(load, []);
 
   const remove = async (id) => {
-    if (!window.confirm("Remove this request?")) return;
+    if (!window.confirm(t("requests.removeConfirm"))) return;
     await fetch(`/api/agency-requests/${id}`, { method: "DELETE" }).catch(() => {});
     load();
   };
@@ -40,7 +42,7 @@ export function MyRequestsPage() {
   const submit = async (e) => {
     e.preventDefault();
     if (!form.name || !form.description) {
-      toast("Name and description are required", "err");
+      toast(t("requests.nameDescRequired"), "err");
       return;
     }
     setBusy(true);
@@ -53,9 +55,9 @@ export function MyRequestsPage() {
       if (!res.ok) throw new Error("fail");
       setForm(EMPTY);
       load();
-      toast("Request submitted", "ok");
+      toast(t("requests.submitted"), "ok");
     } catch {
-      toast("Could not submit request", "err");
+      toast(t("requests.submitFailed"), "err");
     } finally {
       setBusy(false);
     }
@@ -63,21 +65,21 @@ export function MyRequestsPage() {
 
   return (
     <div className="page-container-max">
-      <PageTitle kicker="Human resources" title="My Requests" />
+      <PageTitle kicker={t("requests.myRequestsKicker")} title={t("requests.myRequestsTitle")} />
 
       {isAdmin ? (
         <form onSubmit={submit} className="card" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "12px", alignItems: "end", marginBottom: "20px" }}>
-          <Field label="name">
+          <Field label={t("requests.name")}>
             <BoxInput value={form.name} onChange={set("name")} />
           </Field>
-          <Field label="description">
+          <Field label={t("requests.description")}>
             <BoxInput value={form.description} onChange={set("description")} />
           </Field>
-          <Field label="submission date">
+          <Field label={t("requests.submissionDate")}>
             <BoxInput type="date" value={form.submitted_date} onChange={set("submitted_date")} />
           </Field>
           <Button variant="brand" type="submit" loading={busy} style={{ top: "-20px" }}>
-            Submit request
+            {t("requests.submitRequest")}
           </Button>
         </form>
       ) : null}
@@ -86,10 +88,10 @@ export function MyRequestsPage() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Description</th>
-              <th>Submitted</th>
-              <th>Status</th>
+              <th>{t("requests.nameCol")}</th>
+              <th>{t("requests.descriptionCol")}</th>
+              <th>{t("requests.submittedCol")}</th>
+              <th>{t("requests.statusCol")}</th>
               {isAdmin ? <th></th> : null}
             </tr>
           </thead>
@@ -97,7 +99,7 @@ export function MyRequestsPage() {
             {requests.length === 0 ? (
               <tr>
                 <td colSpan={isAdmin ? 5 : 4} style={{ padding: "32px 16px", textAlign: "center", color: "var(--color-muted)" }}>
-                  No requests yet.
+                  {t("requests.noRequests")}
                 </td>
               </tr>
             ) : (
@@ -112,7 +114,7 @@ export function MyRequestsPage() {
                   {isAdmin ? (
                     <td>
                       <button type="button" onClick={() => remove(r.id)} style={{ color: "var(--color-danger)", fontSize: "12px", fontWeight: "600" }}>
-                        Remove
+                        {t("requests.remove")}
                       </button>
                     </td>
                   ) : null}

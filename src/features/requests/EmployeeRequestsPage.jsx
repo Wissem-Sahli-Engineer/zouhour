@@ -6,12 +6,7 @@ import { Button } from "../../components/ui/Button";
 import { toast } from "../../components/ui/Toast";
 import { IconPalmTree, IconWallet, IconCoins } from "../../components/ui/Icons";
 import { useAuth } from "../../store/auth";
-
-const REQUEST_TABS = [
-  { id: "vacations", label: "Vacations", icon: <IconPalmTree size={20} /> },
-  { id: "salary-advances", label: "Salary Advances", icon: <IconWallet size={20} /> },
-  { id: "loans", label: "Loans", icon: <IconCoins size={20} /> },
-];
+import { useI18n } from "../../store/i18n";
 
 const BADGE_TONE = {
   approved: "badge-success",
@@ -20,12 +15,19 @@ const BADGE_TONE = {
 };
 
 export function EmployeeRequestsPage() {
+  const t = useI18n((s) => s.t);
   const user = useAuth((s) => s.user);
   const [tab, setTab] = useState("vacations");
   const [requests, setRequests] = useState([]);
   const [detail, setDetail] = useState("");
   const [submittedDate, setSubmittedDate] = useState(new Date().toISOString().slice(0, 10));
   const [busy, setBusy] = useState(false);
+
+  const REQUEST_TABS = [
+    { id: "vacations", label: t("requests.vacations"), icon: <IconPalmTree size={20} /> },
+    { id: "salary-advances", label: t("requests.salaryAdvances"), icon: <IconWallet size={20} /> },
+    { id: "loans", label: t("requests.loans"), icon: <IconCoins size={20} /> },
+  ];
 
   const load = () => {
     fetch("/api/employee-requests")
@@ -41,7 +43,7 @@ export function EmployeeRequestsPage() {
   const submit = async (e) => {
     e.preventDefault();
     if (!detail) {
-      toast("Please describe the request", "err");
+      toast(t("requests.describeRequest"), "err");
       return;
     }
     setBusy(true);
@@ -59,37 +61,37 @@ export function EmployeeRequestsPage() {
       if (!res.ok) throw new Error("fail");
       setDetail("");
       load();
-      toast("Request submitted", "ok");
+      toast(t("requests.submitted"), "ok");
     } catch {
-      toast("Could not submit request", "err");
+      toast(t("requests.submitFailed"), "err");
     } finally {
       setBusy(false);
     }
   };
 
   const remove = async (id) => {
-    if (!window.confirm("Remove this request?")) return;
+    if (!window.confirm(t("requests.removeConfirm"))) return;
     await fetch(`/api/employee-requests/${id}`, { method: "DELETE" }).catch(() => {});
     load();
   };
 
   return (
     <div className="page-container-max">
-      <PageTitle kicker="Human resources" title="Employee Requests" />
+      <PageTitle kicker={t("requests.myRequestsKicker")} title={t("requests.employeeRequestsTitle")} />
 
       <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
         <Card tabs={REQUEST_TABS} activeTab={tab} onTabChange={setTab} maxWidth={460} />
       </div>
 
       <form onSubmit={submit} className="card" style={{ display: "grid", gridTemplateColumns: "2fr 1fr auto", gap: "12px", alignItems: "end" }}>
-        <Field label="detail">
-          <BoxInput value={detail} onChange={(e) => setDetail(e.target.value)} placeholder="e.g. Nov 3 – Nov 10, or TND 400" />
+        <Field label={t("requests.detail")}>
+          <BoxInput value={detail} onChange={(e) => setDetail(e.target.value)} placeholder={t("requests.detailPlaceholder")} />
         </Field>
-        <Field label="submission date">
+        <Field label={t("requests.submissionDate")}>
           <BoxInput type="date" value={submittedDate} onChange={(e) => setSubmittedDate(e.target.value)} />
         </Field>
         <Button variant="brand" type="submit" loading={busy} style={{ top: "-20px" }}>
-          Submit
+          {t("requests.submit")}
         </Button>
       </form>
 
@@ -97,10 +99,10 @@ export function EmployeeRequestsPage() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Employee</th>
-              <th>Detail</th>
-              <th>Submitted</th>
-              <th>Status</th>
+              <th>{t("requests.employeeCol")}</th>
+              <th>{t("requests.detailCol")}</th>
+              <th>{t("requests.submittedCol")}</th>
+              <th>{t("requests.statusCol")}</th>
               <th></th>
             </tr>
           </thead>
@@ -108,7 +110,7 @@ export function EmployeeRequestsPage() {
             {rows.length === 0 ? (
               <tr>
                 <td colSpan={5} style={{ padding: "32px 16px", textAlign: "center", color: "var(--color-muted)" }}>
-                  No requests yet.
+                  {t("requests.noRequests")}
                 </td>
               </tr>
             ) : (
@@ -122,7 +124,7 @@ export function EmployeeRequestsPage() {
                   </td>
                   <td>
                     <button type="button" onClick={() => remove(r.id)} style={{ color: "var(--color-danger)", fontSize: "12px", fontWeight: "600" }}>
-                      Remove
+                      {t("requests.remove")}
                     </button>
                   </td>
                 </tr>

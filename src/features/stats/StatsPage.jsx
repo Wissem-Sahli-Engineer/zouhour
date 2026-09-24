@@ -17,6 +17,7 @@ import {
 import { PageTitle } from "../../components/ui/Card";
 import { BoxSelect } from "../../components/ui/Input";
 import { useScrollReveal } from "../../lib/useScrollReveal";
+import { useI18n } from "../../store/i18n";
 
 const COUNTRIES = ["tunisia", "libya"];
 
@@ -32,6 +33,7 @@ const COUNTRY_COLORS = { tunisia: "#8B5CF6", libya: "#F0924B" };
 export function StatsPage() {
   const root = useRef(null);
   useScrollReveal(root);
+  const t = useI18n((s) => s.t);
   const [clients, setClients] = useState([]);
   const [country, setCountry] = useState("all");
   const [visaType, setVisaType] = useState("all");
@@ -130,54 +132,54 @@ export function StatsPage() {
 
   return (
     <div ref={root} className="page-container-max">
-      <PageTitle kicker="Analytics" title="New clients over time" />
+      <PageTitle kicker={t("statsPage.kicker")} title={t("statsPage.title")} />
 
       <div className="grid-12" style={{ marginBottom: "24px" }}>
         <aside data-reveal className="col-4 card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <p style={{ fontSize: "14px", fontWeight: "700", color: "var(--color-ink)" }}>Filters</p>
+          <p style={{ fontSize: "14px", fontWeight: "700", color: "var(--color-ink)" }}>{t("statsPage.filters")}</p>
           <div>
-            <p style={{ marginBottom: "6px", fontSize: "12px", color: "var(--color-muted)" }}>Country</p>
+            <p style={{ marginBottom: "6px", fontSize: "12px", color: "var(--color-muted)" }}>{t("statsPage.country")}</p>
             <BoxSelect value={country} onChange={(e) => setCountry(e.target.value)}>
-              <option value="all">All countries</option>
+              <option value="all">{t("common.allCountries")}</option>
               {countries.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </BoxSelect>
           </div>
           <div>
-            <p style={{ marginBottom: "6px", fontSize: "12px", color: "var(--color-muted)" }}>Visa type</p>
+            <p style={{ marginBottom: "6px", fontSize: "12px", color: "var(--color-muted)" }}>{t("statsPage.visaType")}</p>
             <BoxSelect value={visaType} onChange={(e) => setVisaType(e.target.value)}>
-              <option value="all">All types</option>
+              <option value="all">{t("common.allTypes")}</option>
               {visaTypes.map((v) => (
                 <option key={v} value={v}>{v}</option>
               ))}
             </BoxSelect>
           </div>
           <p style={{ paddingTop: "8px", fontSize: "12.5px", lineHeight: "1.5", color: "var(--color-muted)" }}>
-            {filtered.length} client{filtered.length === 1 ? "" : "s"} match this filter, grouped by the month they were added.
+            {filtered.length} {t("statsPage.clientsMatch")}
           </p>
         </aside>
 
         <div data-reveal className="col-8 card">
           <h2 style={{ marginBottom: "4px", fontSize: "16px", fontWeight: "700", color: "var(--color-ink)" }}>
-            New clients per month
+            {t("statsPage.newClientsPerMonth")}
           </h2>
           <p style={{ marginBottom: "24px", fontSize: "13px", color: "var(--color-muted)" }}>
-            {country === "all" ? "All countries" : country} · {visaType === "all" ? "all visa types" : visaType}
+            {country === "all" ? t("common.allCountries") : country} · {visaType === "all" ? t("statsPage.allVisaTypes") : visaType}
           </p>
           <div style={{ height: "280px" }}>
             {series.length === 0 ? (
               <div className="flex-center" style={{ height: "100%", color: "var(--color-muted)", fontSize: "13px" }}>
-                No client data yet for this filter.
+                {t("statsPage.noClientData")}
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={series}>
-                  <CartesianGrid stroke="#e7e7ea" vertical={false} />
+                  <CartesianGrid stroke="var(--color-line)" vertical={false} />
                   <XAxis dataKey="month" tick={{ fill: "#8a8a8f", fontSize: 12 }} axisLine={false} tickLine={false} />
                   <YAxis allowDecimals={false} tick={{ fill: "#8a8a8f", fontSize: 12 }} axisLine={false} tickLine={false} />
                   <Tooltip />
-                  <Line type="monotone" dataKey="count" name="New clients" stroke="#8B5CF6" strokeWidth={2.4} dot={{ r: 4, fill: "#8B5CF6" }} />
+                  <Line type="monotone" dataKey="count" name={t("statsPage.newClients")} stroke="#8B5CF6" strokeWidth={2.4} dot={{ r: 4, fill: "#8B5CF6" }} />
                 </LineChart>
               </ResponsiveContainer>
             )}
@@ -188,13 +190,13 @@ export function StatsPage() {
       <div className="grid-12" style={{ marginBottom: "24px" }}>
         <div data-reveal className="col-6 card">
           <h2 style={{ marginBottom: "16px", fontSize: "16px", fontWeight: "700", color: "var(--color-ink)" }}>
-            Clients by visa status
+            {t("statsPage.visaStatusChart")}
           </h2>
           <div style={{ height: "220px" }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={statusCounts} layout="vertical" margin={{ left: 8, right: 8 }}>
                 <XAxis type="number" hide allowDecimals={false} />
-                <YAxis type="category" dataKey="name" width={92} tick={{ fill: "#1a1a1a", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="name" width={92} tick={{ fill: "var(--color-ink)", fontSize: 12 }} axisLine={false} tickLine={false} />
                 <Tooltip />
                 <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={14}>
                   {statusCounts.map((s) => (
@@ -208,11 +210,11 @@ export function StatsPage() {
 
         <div data-reveal className="col-3 card">
           <h2 style={{ marginBottom: "16px", fontSize: "16px", fontWeight: "700", color: "var(--color-ink)" }}>
-            Clients by country
+            {t("statsPage.byCountry")}
           </h2>
           <div style={{ height: "220px" }}>
             {byCountry.length === 0 ? (
-              <div className="flex-center" style={{ height: "100%", color: "var(--color-muted)", fontSize: "13px" }}>No data yet.</div>
+              <div className="flex-center" style={{ height: "100%", color: "var(--color-muted)", fontSize: "13px" }}>{t("statsPage.noDataYet")}</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -231,11 +233,11 @@ export function StatsPage() {
 
         <div data-reveal className="col-3 card">
           <h2 style={{ marginBottom: "16px", fontSize: "16px", fontWeight: "700", color: "var(--color-ink)" }}>
-            Factures vs reçus
+            {t("statsPage.facturesVsRecus")}
           </h2>
           <div style={{ height: "220px" }}>
             {invoicesByType.every((i) => i.value === 0) ? (
-              <div className="flex-center" style={{ height: "100%", color: "var(--color-muted)", fontSize: "13px" }}>No invoices yet.</div>
+              <div className="flex-center" style={{ height: "100%", color: "var(--color-muted)", fontSize: "13px" }}>{t("statsPage.noInvoicesYet")}</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -256,21 +258,21 @@ export function StatsPage() {
       <div className="grid-12">
         <div data-reveal className="col-6 card">
           <h2 style={{ marginBottom: "16px", fontSize: "16px", fontWeight: "700", color: "var(--color-ink)" }}>
-            Treasury — gathering vs spending
+            {t("statsPage.treasuryChart")}
           </h2>
           <div style={{ height: "240px" }}>
             {treasuryMonthly.length === 0 ? (
-              <div className="flex-center" style={{ height: "100%", color: "var(--color-muted)", fontSize: "13px" }}>No treasury history yet.</div>
+              <div className="flex-center" style={{ height: "100%", color: "var(--color-muted)", fontSize: "13px" }}>{t("statsTab.noHistory")}</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={treasuryMonthly}>
-                  <CartesianGrid stroke="#e7e7ea" strokeDasharray="3 3" vertical={false} />
+                  <CartesianGrid stroke="var(--color-line)" strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="month" tick={{ fill: "#8a8a8f", fontSize: 12 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: "#8a8a8f", fontSize: 12 }} axisLine={false} tickLine={false} />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="gathering" name="Gathering" fill="#8B5CF6" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="spending" name="Spending" fill="#F0924B" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="gathering" name={t("dashboard.gathering")} fill="#8B5CF6" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="spending" name={t("dashboard.spending")} fill="#F0924B" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -279,16 +281,16 @@ export function StatsPage() {
 
         <div data-reveal className="col-3 card">
           <h2 style={{ marginBottom: "16px", fontSize: "16px", fontWeight: "700", color: "var(--color-ink)" }}>
-            Bank balances
+            {t("statsPage.bankBalances")}
           </h2>
           <div style={{ height: "240px" }}>
             {bankAccounts.length === 0 ? (
-              <div className="flex-center" style={{ height: "100%", color: "var(--color-muted)", fontSize: "13px" }}>No accounts yet.</div>
+              <div className="flex-center" style={{ height: "100%", color: "var(--color-muted)", fontSize: "13px" }}>{t("statsPage.noAccountsYet")}</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={bankAccounts} layout="vertical" margin={{ left: 8, right: 8 }}>
                   <XAxis type="number" hide />
-                  <YAxis type="category" dataKey="name" width={90} tick={{ fill: "#1a1a1a", fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="name" width={90} tick={{ fill: "var(--color-ink)", fontSize: 11 }} axisLine={false} tickLine={false} />
                   <Tooltip />
                   <Bar dataKey="balance" fill="#22c55e" radius={[0, 6, 6, 0]} barSize={14} />
                 </BarChart>
@@ -299,11 +301,11 @@ export function StatsPage() {
 
         <div data-reveal className="col-3 card">
           <h2 style={{ marginBottom: "16px", fontSize: "16px", fontWeight: "700", color: "var(--color-ink)" }}>
-            Payroll cost per period
+            {t("statsPage.payrollCost")}
           </h2>
           <div style={{ height: "240px" }}>
             {payrollByPeriod.length === 0 ? (
-              <div className="flex-center" style={{ height: "100%", color: "var(--color-muted)", fontSize: "13px" }}>No payslips yet.</div>
+              <div className="flex-center" style={{ height: "100%", color: "var(--color-muted)", fontSize: "13px" }}>{t("statsPage.noPayslipsYet")}</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={payrollByPeriod}>

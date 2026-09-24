@@ -3,6 +3,7 @@ import { BoxInput, BoxSelect, Field } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { toast } from "../../components/ui/Toast";
 import Magnet from "../../components/ui/magnet";
+import { useI18n } from "../../store/i18n";
 
 const EMPTY_FORM = {
   doc_type: "facture",
@@ -20,6 +21,7 @@ const EMPTY_FORM = {
 const EMPTY_ITEM = { designation: "", quantity: "1", unit_price: "" };
 
 export function InvoicesTab({ country }) {
+  const t = useI18n((s) => s.t);
   const [invoices, setInvoices] = useState([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [items, setItems] = useState([{ ...EMPTY_ITEM }]);
@@ -48,12 +50,12 @@ export function InvoicesTab({ country }) {
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch {
-      toast("Could not download the PDF", "err");
+      toast(t("invoicesTab.downloadFailed"), "err");
     }
   };
 
   const removeInvoice = async (id) => {
-    if (!window.confirm("Remove this invoice/receipt?")) return;
+    if (!window.confirm(t("invoicesTab.removeConfirm"))) return;
     await fetch(`/api/invoices/${id}`, { method: "DELETE" }).catch(() => {});
     load();
   };
@@ -69,7 +71,7 @@ export function InvoicesTab({ country }) {
   const submit = async (e) => {
     e.preventDefault();
     if (!form.client_name) {
-      toast("Client name is required", "err");
+      toast(t("invoicesTab.nameRequired"), "err");
       return;
     }
     setBusy(true);
@@ -106,9 +108,9 @@ export function InvoicesTab({ country }) {
       setForm(EMPTY_FORM);
       setItems([{ ...EMPTY_ITEM }]);
       load();
-      toast("Document created", "ok");
+      toast(t("invoicesTab.created"), "ok");
     } catch {
-      toast("Could not create document", "err");
+      toast(t("invoicesTab.createFailed"), "err");
     } finally {
       setBusy(false);
     }
@@ -118,84 +120,84 @@ export function InvoicesTab({ country }) {
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
       <form onSubmit={submit} className="card">
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "12px" }}>
-          <Field label="document type">
+          <Field label={t("invoicesTab.docType")}>
             <BoxSelect value={form.doc_type} onChange={set("doc_type")}>
-              <option value="facture">Facture</option>
-              <option value="recu">Reçu</option>
+              <option value="facture">{t("invoicesTab.facture")}</option>
+              <option value="recu">{t("invoicesTab.recu")}</option>
             </BoxSelect>
           </Field>
-          <Field label="client name">
+          <Field label={t("invoicesTab.clientName")}>
             <BoxInput value={form.client_name} onChange={set("client_name")} />
           </Field>
-          <Field label="client passport">
+          <Field label={t("invoicesTab.clientPassport")}>
             <BoxInput value={form.client_passport} onChange={set("client_passport")} />
           </Field>
-          <Field label="matricule fiscal">
+          <Field label={t("invoicesTab.matriculeFiscal")}>
             <BoxInput value={form.client_mf} onChange={set("client_mf")} />
           </Field>
-          <Field label="company name">
+          <Field label={t("invoicesTab.companyName")}>
             <BoxInput value={form.company_name} onChange={set("company_name")} />
           </Field>
           {form.doc_type === "recu" ? (
-            <Field label="service type">
+            <Field label={t("invoicesTab.serviceType")}>
               <BoxInput value={form.service_type} onChange={set("service_type")} />
             </Field>
           ) : null}
-          <Field label="issue date">
+          <Field label={t("invoicesTab.issueDate")}>
             <BoxInput type="date" value={form.issue_date} onChange={set("issue_date")} />
           </Field>
           {form.doc_type === "facture" ? (
             <>
-              <Field label="TVA rate">
+              <Field label={t("invoicesTab.tvaRate")}>
                 <BoxInput type="number" step="0.01" value={form.tva_rate} onChange={set("tva_rate")} />
               </Field>
-              <Field label="timbre">
+              <Field label={t("invoicesTab.timbre")}>
                 <BoxInput type="number" step="0.01" value={form.timbre} onChange={set("timbre")} />
               </Field>
             </>
           ) : null}
-          <Field label="amount already paid">
+          <Field label={t("invoicesTab.amountPaid")}>
             <BoxInput type="number" step="0.01" value={form.amount_paid} onChange={set("amount_paid")} />
           </Field>
         </div>
 
         {form.doc_type === "facture" ? (
           <div style={{ marginTop: "20px" }}>
-            <p style={{ fontSize: "13px", fontWeight: "700", color: "var(--color-ink)", marginBottom: "8px" }}>Line items</p>
+            <p style={{ fontSize: "13px", fontWeight: "700", color: "var(--color-ink)", marginBottom: "8px" }}>{t("invoicesTab.lineItems")}</p>
             {items.map((row, i) => (
               <div key={i} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr auto", gap: "10px", marginBottom: "8px" }}>
-                <BoxInput placeholder="Designation" value={row.designation} onChange={setItem(i, "designation")} />
-                <BoxInput type="number" placeholder="Qty" value={row.quantity} onChange={setItem(i, "quantity")} />
-                <BoxInput type="number" step="0.01" placeholder="Unit price" value={row.unit_price} onChange={setItem(i, "unit_price")} />
+                <BoxInput placeholder={t("invoicesTab.designation")} value={row.designation} onChange={setItem(i, "designation")} />
+                <BoxInput type="number" placeholder={t("invoicesTab.qty")} value={row.quantity} onChange={setItem(i, "quantity")} />
+                <BoxInput type="number" step="0.01" placeholder={t("invoicesTab.unitPrice")} value={row.unit_price} onChange={setItem(i, "unit_price")} />
                 <button type="button" onClick={() => removeItemRow(i)} style={{ color: "var(--color-danger)", fontWeight: "600", fontSize: "12px" }}>
-                  Remove
+                  {t("common.remove")}
                 </button>
               </div>
             ))}
             <button type="button" onClick={addItemRow} style={{ fontSize: "13px", fontWeight: "600", color: "var(--color-brand)" }}>
-              + Add line item
+              {t("invoicesTab.addLineItem")}
             </button>
           </div>
         ) : null}
 
         <div style={{ marginTop: "20px" }}>
           <Button variant="brand" type="submit" loading={busy}>
-            Create {form.doc_type === "recu" ? "reçu" : "facture"}
+            {form.doc_type === "recu" ? t("invoicesTab.createRecu") : t("invoicesTab.createFacture")}
           </Button>
         </div>
       </form>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--color-line)" }}>
-          <h2 style={{ fontSize: "16px", fontWeight: "700" }}>Documents — {country}</h2>
+          <h2 style={{ fontSize: "16px", fontWeight: "700" }}>{t("invoicesTab.documentsFor")} — {country}</h2>
         </div>
         <table className="data-table">
           <thead>
             <tr>
-              <th>Number</th>
-              <th>Type</th>
-              <th>Client</th>
-              <th>Date</th>
+              <th>{t("invoicesTab.number")}</th>
+              <th>{t("invoicesTab.type")}</th>
+              <th>{t("invoicesTab.client")}</th>
+              <th>{t("invoicesTab.date")}</th>
               <th></th>
             </tr>
           </thead>
@@ -203,7 +205,7 @@ export function InvoicesTab({ country }) {
             {invoices.length === 0 ? (
               <tr>
                 <td colSpan={5} style={{ padding: "32px 16px", textAlign: "center", color: "var(--color-muted)" }}>
-                  No invoices or receipts yet.
+                  {t("invoicesTab.noDocuments")}
                 </td>
               </tr>
             ) : (
@@ -221,7 +223,7 @@ export function InvoicesTab({ country }) {
                         className="btn btn-brand"
                         style={{ width: "auto", padding: "6px 14px", fontSize: "12px", display: "inline-flex" }}
                       >
-                        Download PDF
+                        {t("invoicesTab.downloadPdf")}
                       </button>
                     </Magnet>
                     <button
@@ -229,7 +231,7 @@ export function InvoicesTab({ country }) {
                       onClick={() => removeInvoice(inv.id)}
                       style={{ color: "var(--color-danger)", fontSize: "12px", fontWeight: "600" }}
                     >
-                      Remove
+                      {t("invoicesTab.remove")}
                     </button>
                   </td>
                 </tr>

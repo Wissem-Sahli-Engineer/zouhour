@@ -5,10 +5,12 @@ import { BoxInput, BoxSelect, Field } from "../../components/ui/Input";
 import { toast } from "../../components/ui/Toast";
 import { PASSPORT_FIELDS, BUSINESS_FIELDS } from "./fields";
 import { withToken } from "../../store/auth";
+import { useI18n } from "../../store/i18n";
 
 const ALL_FIELDS = [...PASSPORT_FIELDS, ...BUSINESS_FIELDS, "visa_status"];
 
 export function EditClientPage() {
+  const t = useI18n((s) => s.t);
   const { id } = useParams();
   const navigate = useNavigate();
   const [form, setForm] = useState(null);
@@ -25,11 +27,11 @@ export function EditClientPage() {
           setForm(Object.fromEntries(ALL_FIELDS.map((k) => [k, found[k] ?? ""])));
           setPhotoUrl(found.user_photo ? withToken(found.user_photo) : "");
         } else {
-          toast("Client not found", "err");
+          toast(t("clients.notFound"), "err");
           navigate("/clients");
         }
       })
-      .catch(() => toast("Could not load client", "err"));
+      .catch(() => toast(t("clients.serverError"), "err"));
   }, [id, navigate]);
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -59,30 +61,30 @@ export function EditClientPage() {
         body: JSON.stringify({ ...form, user_photo }),
       });
       if (!res.ok) throw new Error("fail");
-      toast("Client updated", "ok");
+      toast(t("clients.updated"), "ok");
       navigate(`/clients/${id}`);
     } catch {
-      toast("Could not update client", "err");
+      toast(t("clients.updateFailed"), "err");
     } finally {
       setBusy(false);
     }
   };
 
   if (!form) {
-    return <p style={{ color: "var(--color-muted)" }}>Loading…</p>;
+    return <p style={{ color: "var(--color-muted)" }}>{t("common.loading")}</p>;
   }
 
   return (
     <div style={{ margin: "0 auto", maxWidth: "900px" }}>
       <Link to={`/clients/${id}`} style={{ fontSize: "13px", fontWeight: "600", color: "var(--color-brand)" }}>
-        ← Back to client
+        {t("clients.backToClient")}
       </Link>
-      <h1 style={{ marginTop: "16px", fontSize: "28px", fontWeight: "700" }}>Edit client</h1>
+      <h1 style={{ marginTop: "16px", fontSize: "28px", fontWeight: "700" }}>{t("clients.editClient")}</h1>
 
       <div className="card" style={{ marginTop: "20px" }}>
         <label className="upload-dropzone" style={{ display: "block" }}>
-          <div style={{ fontWeight: "600", fontSize: "15px", color: "var(--color-ink)" }}>Replace client photo</div>
-          <div style={{ marginTop: "4px", fontSize: "13px", color: "var(--color-muted)" }}>Optional</div>
+          <div style={{ fontWeight: "600", fontSize: "15px", color: "var(--color-ink)" }}>{t("clients.replacePhoto")}</div>
+          <div style={{ marginTop: "4px", fontSize: "13px", color: "var(--color-muted)" }}>{t("clients.optional")}</div>
           <input type="file" accept="image/*" style={{ display: "none" }} onChange={onPhotoSelect} />
         </label>
         {photoUrl ? (
@@ -90,14 +92,14 @@ export function EditClientPage() {
         ) : null}
 
         <h2 style={{ marginTop: "32px", marginBottom: "8px", fontSize: "15px", fontWeight: "700", color: "var(--color-ink)" }}>
-          Passport information
+          {t("clients.passportInfo")}
         </h2>
         <div className="grid-2">
           {PASSPORT_FIELDS.map((key) => (
-            <Field key={key} label={key.replaceAll("_", " ")}>
+            <Field key={key} label={t(`clients.fields.${key}`)}>
               {key === "sex" ? (
                 <BoxSelect value={form.sex} onChange={set("sex")}>
-                  <option value="">Select</option>
+                  <option value="">{t("clients.selectValue")}</option>
                   <option value="M">M</option>
                   <option value="F">F</option>
                   <option value="X">X</option>
@@ -110,12 +112,12 @@ export function EditClientPage() {
         </div>
 
         <h2 style={{ marginTop: "32px", marginBottom: "8px", fontSize: "15px", fontWeight: "700", color: "var(--color-ink)" }}>
-          Contact & business
+          {t("clients.contactBusiness")}
         </h2>
         <div className="grid-2">
-          <Field label="visa status">
+          <Field label={t("clients.visaStatus")}>
             <BoxSelect value={form.visa_status} onChange={set("visa_status")}>
-              <option value="">Select</option>
+              <option value="">{t("clients.selectValue")}</option>
               <option value="not_started">Not started</option>
               <option value="pending">Pending</option>
               <option value="approved">Approved</option>
@@ -123,7 +125,7 @@ export function EditClientPage() {
             </BoxSelect>
           </Field>
           {BUSINESS_FIELDS.map((key) => (
-            <Field key={key} label={key.replaceAll("_", " ")}>
+            <Field key={key} label={t(`clients.fields.${key}`)}>
               <BoxInput
                 type={key === "prix_dossier" ? "number" : key === "email" ? "email" : "text"}
                 value={form[key]}
@@ -135,7 +137,7 @@ export function EditClientPage() {
 
         <div style={{ marginTop: "24px" }}>
           <Button variant="brand" loading={busy} onClick={save}>
-            Save changes
+            {t("clients.saveChanges")}
           </Button>
         </div>
       </div>

@@ -5,12 +5,13 @@ import { CHAT_API_URL, CHAT_MODEL_LABEL } from "../../lib/config";
 import { useChatStore } from "../../store/chat";
 import { useLenisScroll } from "../../lib/useLenisScroll";
 import Magnet from "../../components/ui/magnet";
-
-const STARTER = [
-  { role: "assistant", content: `Hi, I'm running locally (${CHAT_MODEL_LABEL} via Ollama). Ask me anything about cases, documents, or invoices.` },
-];
+import { useI18n } from "../../store/i18n";
 
 export function ChatbotPage() {
+  const t = useI18n((s) => s.t);
+  const STARTER = [
+    { role: "assistant", content: t("chatbot.starter").replace("{model}", CHAT_MODEL_LABEL) },
+  ];
   const messages = useChatStore((s) => s.pageMessages);
   const setMessages = useChatStore((s) => s.setPageMessages);
   const [draft, setDraft] = useState("");
@@ -50,13 +51,13 @@ export function ChatbotPage() {
       });
       if (!res.ok) throw new Error(`request failed (${res.status})`);
       const data = await res.json();
-      setMessages((m) => [...m, { role: "assistant", content: data.reply || "No response from the model." }]);
+      setMessages((m) => [...m, { role: "assistant", content: data.reply || t("chatbot.noResponse") }]);
     } catch (err) {
       setMessages((m) => [
         ...m,
         {
           role: "assistant",
-          content: `Couldn't reach the assistant (${err.message}). Make sure the backend and Ollama are running.`,
+          content: t("chatbot.unreachable").replace("{error}", err.message),
         },
       ]);
     } finally {
@@ -66,7 +67,7 @@ export function ChatbotPage() {
 
   return (
     <div className="page-container-max" style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 134px)" }}>
-      <PageTitle kicker="Local LLM · Ollama" title="Agency Assistant" />
+      <PageTitle kicker={t("chatbot.kicker")} title={t("chatbot.title")} />
 
       <div
         className="card"
@@ -110,7 +111,7 @@ export function ChatbotPage() {
                   color: "var(--color-muted)",
                 }}
               >
-                Thinking…
+                {t("chatbot.thinking")}
               </div>
             ) : null}
           </div>
@@ -129,7 +130,7 @@ export function ChatbotPage() {
           <input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="Ask about a file…"
+            placeholder={t("chatbot.askPlaceholder")}
             className="input-box"
             style={{ flex: 1 }}
           />
@@ -138,7 +139,7 @@ export function ChatbotPage() {
               type="submit"
               className="btn btn-brand"
               style={{ width: "auto", padding: "10px 16px" }}
-              aria-label="Send"
+              aria-label={t("chatbot.send")}
               disabled={loading}
             >
               <IconSend />

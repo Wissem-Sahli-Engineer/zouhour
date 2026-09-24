@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { BoxInput, BoxSelect, Field } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { toast } from "../../components/ui/Toast";
+import { useI18n } from "../../store/i18n";
 
 const EMPTY_ENTRY = {
   kind: "spending",
@@ -13,6 +14,7 @@ const EMPTY_ENTRY = {
 };
 
 export function TreasuryTab({ country, currency }) {
+  const t = useI18n((s) => s.t);
   const [data, setData] = useState(null);
   const [form, setForm] = useState(EMPTY_ENTRY);
   const [busy, setBusy] = useState(false);
@@ -31,7 +33,7 @@ export function TreasuryTab({ country, currency }) {
   const submit = async (e) => {
     e.preventDefault();
     if (!form.product_name || !form.price) {
-      toast("Product name and price are required", "err");
+      toast(t("treasuryTab.required"), "err");
       return;
     }
     setBusy(true);
@@ -44,9 +46,9 @@ export function TreasuryTab({ country, currency }) {
       if (!res.ok) throw new Error("fail");
       setForm(EMPTY_ENTRY);
       load();
-      toast("Entry recorded", "ok");
+      toast(t("treasuryTab.recorded"), "ok");
     } catch {
-      toast("Could not save entry", "err");
+      toast(t("treasuryTab.saveFailed"), "err");
     } finally {
       setBusy(false);
     }
@@ -65,7 +67,7 @@ export function TreasuryTab({ country, currency }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
         <div className="card" style={{ padding: "16px 20px" }}>
           <p style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--color-muted)" }}>
-            Gathering this month
+            {t("treasuryTab.gatheringThisMonth")}
           </p>
           <p style={{ marginTop: "6px", fontSize: "22px", fontWeight: "700", color: "var(--color-success)" }}>
             {currency} {month.gathering.toLocaleString()}
@@ -73,7 +75,7 @@ export function TreasuryTab({ country, currency }) {
         </div>
         <div className="card" style={{ padding: "16px 20px" }}>
           <p style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--color-muted)" }}>
-            Spending this month
+            {t("treasuryTab.spendingThisMonth")}
           </p>
           <p style={{ marginTop: "6px", fontSize: "22px", fontWeight: "700", color: "var(--color-danger)" }}>
             {currency} {month.spending.toLocaleString()}
@@ -81,7 +83,7 @@ export function TreasuryTab({ country, currency }) {
         </div>
         <div className="card" style={{ padding: "16px 20px" }}>
           <p style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--color-muted)" }}>
-            Net (resets 1st of month)
+            {t("treasuryTab.netResets")}
           </p>
           <p style={{ marginTop: "6px", fontSize: "22px", fontWeight: "700", color: "var(--color-brand)" }}>
             {currency} {month.net.toLocaleString()}
@@ -90,45 +92,45 @@ export function TreasuryTab({ country, currency }) {
       </div>
 
       <form onSubmit={submit} className="card" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px", alignItems: "end" }}>
-        <Field label="kind">
+        <Field label={t("treasuryTab.kind")}>
           <BoxSelect value={form.kind} onChange={set("kind")}>
-            <option value="spending">Spending</option>
-            <option value="gathering">Gathering</option>
+            <option value="spending">{t("treasuryTab.spending")}</option>
+            <option value="gathering">{t("treasuryTab.gathering")}</option>
           </BoxSelect>
         </Field>
-        <Field label="product / service">
+        <Field label={t("treasuryTab.productService")}>
           <BoxInput value={form.product_name} onChange={set("product_name")} />
         </Field>
-        <Field label="price">
+        <Field label={t("treasuryTab.price")}>
           <BoxInput type="number" step="0.01" value={form.price} onChange={set("price")} />
         </Field>
-        <Field label="date">
+        <Field label={t("treasuryTab.date")}>
           <BoxInput type="date" value={form.entry_date} onChange={set("entry_date")} />
         </Field>
-        <Field label="recorded by">
-          <BoxInput value={form.recorded_by} onChange={set("recorded_by")} placeholder="who wrote it" />
+        <Field label={t("treasuryTab.recordedBy")}>
+          <BoxInput value={form.recorded_by} onChange={set("recorded_by")} placeholder={t("treasuryTab.recordedByPlaceholder")} />
         </Field>
-        <Field label="counterparty">
-          <BoxInput value={form.counterparty} onChange={set("counterparty")} placeholder="who you dealt with" />
+        <Field label={t("treasuryTab.counterparty")}>
+          <BoxInput value={form.counterparty} onChange={set("counterparty")} placeholder={t("treasuryTab.counterpartyPlaceholder")} />
         </Field>
         <Button variant="brand" type="submit" loading={busy}>
-          Add entry
+          {t("treasuryTab.addEntry")}
         </Button>
       </form>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--color-line)" }}>
-          <h2 style={{ fontSize: "16px", fontWeight: "700" }}>This month's transactions</h2>
+          <h2 style={{ fontSize: "16px", fontWeight: "700" }}>{t("treasuryTab.thisMonthTx")}</h2>
         </div>
         <table className="data-table">
           <thead>
             <tr>
-              <th>Kind</th>
-              <th>Product / service</th>
-              <th>Price</th>
-              <th>Date</th>
-              <th>Recorded by</th>
-              <th>Counterparty</th>
+              <th>{t("treasuryTab.kindCol")}</th>
+              <th>{t("treasuryTab.productCol")}</th>
+              <th>{t("treasuryTab.priceCol")}</th>
+              <th>{t("treasuryTab.dateCol")}</th>
+              <th>{t("treasuryTab.recordedByCol")}</th>
+              <th>{t("treasuryTab.counterpartyCol")}</th>
               <th />
             </tr>
           </thead>
@@ -136,14 +138,14 @@ export function TreasuryTab({ country, currency }) {
             {month.entries.length === 0 ? (
               <tr>
                 <td colSpan={7} style={{ padding: "32px 16px", textAlign: "center", color: "var(--color-muted)" }}>
-                  No entries yet this month.
+                  {t("treasuryTab.noEntries")}
                 </td>
               </tr>
             ) : (
               month.entries.map((e) => (
                 <tr key={e.id}>
                   <td>
-                    <span className={`badge ${e.kind === "gathering" ? "badge-success" : "badge-danger"}`}>{e.kind}</span>
+                    <span className={`badge ${e.kind === "gathering" ? "badge-success" : "badge-danger"}`}>{e.kind === "gathering" ? t("treasuryTab.gathering") : t("treasuryTab.spending")}</span>
                   </td>
                   <td>{e.product_name}</td>
                   <td>{currency} {e.price.toLocaleString()}</td>
@@ -152,7 +154,7 @@ export function TreasuryTab({ country, currency }) {
                   <td>{e.counterparty || "—"}</td>
                   <td>
                     <button type="button" onClick={() => removeEntry(e.id)} style={{ color: "var(--color-danger)", fontSize: "12px", fontWeight: "600" }}>
-                      Remove
+                      {t("treasuryTab.remove")}
                     </button>
                   </td>
                 </tr>

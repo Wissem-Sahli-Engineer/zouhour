@@ -148,7 +148,7 @@
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
-  color: #b6b6bd;
+  color: var(--color-muted);
   background: none;
   border: none;
   padding: 4px;

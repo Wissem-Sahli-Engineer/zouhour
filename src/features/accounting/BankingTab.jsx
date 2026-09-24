@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { BoxInput, Field } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { toast } from "../../components/ui/Toast";
+import { useI18n } from "../../store/i18n";
 
 const EMPTY_ACCOUNT = { name: "", currency: "", balance: "" };
 const EMPTY_TX = { label: "", amount: "", entry_date: new Date().toISOString().slice(0, 10) };
 
 export function BankingTab({ country, currency, flag }) {
+  const t = useI18n((s) => s.t);
   const [accounts, setAccounts] = useState([]);
   const [selected, setSelected] = useState(null);
   const [transactions, setTransactions] = useState([]);
@@ -59,16 +61,16 @@ export function BankingTab({ country, currency, flag }) {
       });
       setAccountForm(EMPTY_ACCOUNT);
       loadAccounts();
-      toast("Account added", "ok");
+      toast(t("bankingTab.accountAdded"), "ok");
     } catch {
-      toast("Could not add account", "err");
+      toast(t("bankingTab.addAccountFailed"), "err");
     } finally {
       setBusy(false);
     }
   };
 
   const removeAccount = async (id) => {
-    if (!window.confirm("Remove this account and all its transactions?")) return;
+    if (!window.confirm(t("bankingTab.removeAccountConfirm"))) return;
     await fetch(`/api/banking/accounts/${id}`, { method: "DELETE" }).catch(() => {});
     if (selected?.id === id) setSelected(null);
     loadAccounts();
@@ -92,9 +94,9 @@ export function BankingTab({ country, currency, flag }) {
       setTxForm(EMPTY_TX);
       loadAccounts();
       loadTransactions(selected.id);
-      toast("Transaction recorded", "ok");
+      toast(t("bankingTab.txRecorded"), "ok");
     } catch {
-      toast("Could not save transaction", "err");
+      toast(t("bankingTab.txFailed"), "err");
     } finally {
       setBusy(false);
     }
@@ -110,7 +112,7 @@ export function BankingTab({ country, currency, flag }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       <div>
-        <h2 style={{ fontSize: "18px", fontWeight: "700", marginBottom: "12px" }}>Bank accounts</h2>
+        <h2 style={{ fontSize: "18px", fontWeight: "700", marginBottom: "12px" }}>{t("bankingTab.bankAccounts")}</h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px" }}>
           {accounts.map((a, i) => (
             <div
@@ -127,14 +129,15 @@ export function BankingTab({ country, currency, flag }) {
                 }}
                 style={{
                   position: "absolute", top: "12px", right: "12px", fontSize: "11px", fontWeight: "700",
-                  color: i === 0 ? "rgba(255,255,255,0.7)" : "var(--color-danger)",
+                  color: i === 0 ? "var(--color-card-ink-text)" : "var(--color-danger)",
+                  opacity: i === 0 ? 0.7 : 1,
                 }}
               >
-                Remove
+                {t("bankingTab.remove")}
               </button>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <p style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.14em", color: i === 0 ? "rgba(255,255,255,0.6)" : "var(--color-muted)" }}>
-                  {a.currency} Account
+                <p style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.14em", color: i === 0 ? "var(--color-card-ink-text)" : "var(--color-muted)", opacity: i === 0 ? 0.6 : 1 }}>
+                  {a.currency} {t("bankingTab.accountSuffix")}
                 </p>
                 <span style={{ fontSize: "16px" }}>{flag}</span>
               </div>
@@ -145,22 +148,22 @@ export function BankingTab({ country, currency, flag }) {
             </div>
           ))}
           {accounts.length === 0 ? (
-            <p style={{ color: "var(--color-muted)", fontSize: "14px" }}>No accounts yet for {country}.</p>
+            <p style={{ color: "var(--color-muted)", fontSize: "14px" }}>{t("bankingTab.noAccounts")} {country}.</p>
           ) : null}
         </div>
 
         <form onSubmit={addAccount} className="card" style={{ marginTop: "16px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px", alignItems: "end" }}>
-          <Field label="account name">
+          <Field label={t("bankingTab.accountName")}>
             <BoxInput value={accountForm.name} onChange={(e) => setAccountForm((f) => ({ ...f, name: e.target.value }))} />
           </Field>
-          <Field label="currency">
+          <Field label={t("bankingTab.currency")}>
             <BoxInput value={accountForm.currency} onChange={(e) => setAccountForm((f) => ({ ...f, currency: e.target.value }))} placeholder={currency} />
           </Field>
-          <Field label="opening balance">
+          <Field label={t("bankingTab.openingBalance")}>
             <BoxInput type="number" step="0.01" value={accountForm.balance} onChange={(e) => setAccountForm((f) => ({ ...f, balance: e.target.value }))} />
           </Field>
           <Button variant="brand" type="submit" loading={busy}>
-            Add account
+            {t("bankingTab.addAccount")}
           </Button>
         </form>
       </div>
@@ -168,29 +171,29 @@ export function BankingTab({ country, currency, flag }) {
       {selected ? (
         <div>
           <h2 style={{ fontSize: "18px", fontWeight: "700", marginBottom: "12px" }}>
-            Transactions — {selected.name}
+            {t("bankingTab.transactionsFor")} {selected.name}
           </h2>
           <form onSubmit={addTransaction} className="card" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px", alignItems: "end", marginBottom: "16px" }}>
-            <Field label="label">
+            <Field label={t("bankingTab.label")}>
               <BoxInput value={txForm.label} onChange={(e) => setTxForm((f) => ({ ...f, label: e.target.value }))} />
             </Field>
-            <Field label="amount (+ deposit / − withdrawal)">
+            <Field label={t("bankingTab.amount")}>
               <BoxInput type="number" step="0.01" value={txForm.amount} onChange={(e) => setTxForm((f) => ({ ...f, amount: e.target.value }))} />
             </Field>
-            <Field label="date">
+            <Field label={t("bankingTab.date")}>
               <BoxInput type="date" value={txForm.entry_date} onChange={(e) => setTxForm((f) => ({ ...f, entry_date: e.target.value }))} />
             </Field>
             <Button variant="brand" type="submit" loading={busy}>
-              Add transaction
+              {t("bankingTab.addTransaction")}
             </Button>
           </form>
           <div className="card" style={{ padding: 0, overflow: "hidden" }}>
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Label</th>
-                  <th>Amount</th>
-                  <th>Date</th>
+                  <th>{t("bankingTab.labelCol")}</th>
+                  <th>{t("bankingTab.amountCol")}</th>
+                  <th>{t("bankingTab.dateCol")}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -198,20 +201,20 @@ export function BankingTab({ country, currency, flag }) {
                 {transactions.length === 0 ? (
                   <tr>
                     <td colSpan={4} style={{ padding: "24px 16px", textAlign: "center", color: "var(--color-muted)" }}>
-                      No transactions yet.
+                      {t("bankingTab.noTransactions")}
                     </td>
                   </tr>
                 ) : (
-                  transactions.map((t) => (
-                    <tr key={t.id}>
-                      <td>{t.label}</td>
-                      <td style={{ color: t.amount < 0 ? "var(--color-danger)" : "var(--color-success)", fontWeight: "600" }}>
-                        {t.amount > 0 ? "+" : ""}{t.amount.toLocaleString()}
+                  transactions.map((tx) => (
+                    <tr key={tx.id}>
+                      <td>{tx.label}</td>
+                      <td style={{ color: tx.amount < 0 ? "var(--color-danger)" : "var(--color-success)", fontWeight: "600" }}>
+                        {tx.amount > 0 ? "+" : ""}{tx.amount.toLocaleString()}
                       </td>
-                      <td>{t.entry_date}</td>
+                      <td>{tx.entry_date}</td>
                       <td>
-                        <button type="button" onClick={() => removeTransaction(t.id)} style={{ color: "var(--color-danger)", fontSize: "12px", fontWeight: "600" }}>
-                          Remove
+                        <button type="button" onClick={() => removeTransaction(tx.id)} style={{ color: "var(--color-danger)", fontSize: "12px", fontWeight: "600" }}>
+                          {t("bankingTab.remove")}
                         </button>
                       </td>
                     </tr>

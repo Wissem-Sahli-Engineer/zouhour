@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { IconBell } from "./ui/Icons";
 import Magnet from "./ui/magnet";
+import { useI18n } from "../store/i18n";
 
 const COUNTRIES = [
   { id: "tunisia", currency: "TND" },
@@ -8,6 +9,7 @@ const COUNTRIES = [
 ];
 
 export function NotificationBell() {
+  const t = useI18n((s) => s.t);
   const [open, setOpen] = useState(false);
   const [alertClients, setAlertClients] = useState([]);
   const [treasury, setTreasury] = useState([]);
@@ -48,8 +50,8 @@ export function NotificationBell() {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [open]);
 
-  const hasNegative = treasury.some((t) => t.net < 0);
-  const count = alertClients.length + treasury.filter((t) => t.net < 0).length;
+  const hasNegative = treasury.some((tr) => tr.net < 0);
+  const count = alertClients.length + treasury.filter((tr) => tr.net < 0).length;
 
   return (
     <div style={{ position: "relative" }} ref={boxRef}>
@@ -57,7 +59,7 @@ export function NotificationBell() {
         <button
           type="button"
           className="icon-btn"
-          aria-label="Notifications"
+          aria-label={t("header.notifications")}
           onClick={() => setOpen((o) => !o)}
         >
           <IconBell />
@@ -91,26 +93,26 @@ export function NotificationBell() {
           }}
         >
           <p style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--color-muted)", marginBottom: "10px" }}>
-            Treasury
+            {t("notifications.treasury")}
           </p>
-          {treasury.map((t) => (
-            <div key={t.id} className="flex-between" style={{ marginBottom: "6px" }}>
-              <span style={{ fontSize: "13px", textTransform: "capitalize" }}>{t.id}</span>
-              <span style={{ fontSize: "13px", fontWeight: "700", color: t.net < 0 ? "var(--color-danger)" : "var(--color-success)" }}>
-                {t.currency} {t.net.toLocaleString()}{t.net < 0 ? " ⚠" : ""}
+          {treasury.map((tr) => (
+            <div key={tr.id} className="flex-between" style={{ marginBottom: "6px" }}>
+              <span style={{ fontSize: "13px", textTransform: "capitalize" }}>{tr.id}</span>
+              <span style={{ fontSize: "13px", fontWeight: "700", color: tr.net < 0 ? "var(--color-danger)" : "var(--color-success)" }}>
+                {tr.currency} {tr.net.toLocaleString()}{tr.net < 0 ? " ⚠" : ""}
               </span>
             </div>
           ))}
 
           <p style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--color-muted)", margin: "14px 0 10px" }}>
-            Clients in alert
+            {t("notifications.clientsInAlert")}
           </p>
           {alertClients.length === 0 ? (
-            <p style={{ fontSize: "13px", color: "var(--color-muted)" }}>No client alerts.</p>
+            <p style={{ fontSize: "13px", color: "var(--color-muted)" }}>{t("notifications.noAlerts")}</p>
           ) : (
             alertClients.map((c) => (
               <div key={c.id} style={{ fontSize: "13px", padding: "4px 0" }}>
-                {c.given_name} {c.surname} — <span style={{ color: "var(--color-danger)" }}>visa rejected</span>
+                {c.given_name} {c.surname} — <span style={{ color: "var(--color-danger)" }}>{t("notifications.visaRejected")}</span>
               </div>
             ))
           )}

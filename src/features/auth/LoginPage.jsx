@@ -7,6 +7,7 @@ import { IconEye } from "../../components/ui/Icons";
 import { toast } from "../../components/ui/Toast";
 import { EASE, gsap, useGSAP } from "../../lib/gsap";
 import { useAuth } from "../../store/auth";
+import { useI18n } from "../../store/i18n";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export function LoginPage() {
   const signup = useAuth((s) => s.signup);
   const login = useAuth((s) => s.login);
   const token = useAuth((s) => s.token);
+  const t = useI18n((s) => s.t);
 
   const [mode, setMode] = useState("login");
   const [showPass, setShowPass] = useState(false);
@@ -77,7 +79,7 @@ export function LoginPage() {
       if (mode === "signup") {
         await signup({ name: form.name, email: form.email, password: form.password });
         play("nod");
-        toast("Request submitted — an admin needs to approve it before you can sign in.", "ok");
+        toast(t("auth.pendingApproval"), "ok");
         setMode("login");
         setForm((f) => ({ ...f, password: "" }));
         return;
@@ -89,7 +91,7 @@ export function LoginPage() {
         remember: form.remember,
       });
       play("nod");
-      toast("Welcome back!", "ok");
+      toast(t("auth.welcomeBack"), "ok");
       navigate("/");
     } catch (err) {
       play("shake");
@@ -117,15 +119,13 @@ export function LoginPage() {
           >
             <img src="./logo.png" className="login-logo" data-enter alt="Logo" />
             <p className="login-subtitle" data-enter>
-              {mode === "signup"
-                ? "Request an account — an admin will need to approve it"
-                : "Sign in to your account"}
+              {mode === "signup" ? t("auth.signUpSubtitle") : t("auth.signInSubtitle")}
             </p>
           </div>
 
           <form className="login-form" onSubmit={submit} noValidate>
             {mode === "signup" ? (
-              <Field label="Full name" error={errors.name}>
+              <Field label={t("auth.fullName")} error={errors.name}>
                 <div data-enter>
                   <UnderlineInput
                     value={form.name}
@@ -137,7 +137,7 @@ export function LoginPage() {
               </Field>
             ) : null}
 
-            <Field label="Email" error={errors.email}>
+            <Field label={t("auth.email")} error={errors.email}>
               <div data-enter>
                 <UnderlineInput
                   value={form.email}
@@ -149,7 +149,7 @@ export function LoginPage() {
               </div>
             </Field>
 
-            <Field label="Password" error={errors.password}>
+            <Field label={t("auth.password")} error={errors.password}>
               <div
                 style={{
                   position: "relative",
@@ -185,19 +185,19 @@ export function LoginPage() {
                     checked={form.remember}
                     onChange={onChange("remember")}
                   />
-                  Remember me
+                  {t("auth.rememberMe")}
                 </label>
               </div>
             ) : null}
 
             <div data-enter>
               <Button type="submit" variant="brand" loading={loading}>
-                {mode === "signup" ? "Request account" : "Sign in"}
+                {mode === "signup" ? t("auth.requestAccount") : t("auth.signIn")}
               </Button>
             </div>
 
             <div className="signup-prompt-row" data-enter>
-              {mode === "signup" ? "Already have an account?" : "Don't have an account?"}{" "}
+              {mode === "signup" ? t("auth.alreadyHaveAccount") : t("auth.dontHaveAccount")}{" "}
               <button
                 type="button"
                 className="signup-link-btn"
@@ -207,7 +207,7 @@ export function LoginPage() {
                   play("nod");
                 }}
               >
-                {mode === "signup" ? "Sign in" : "Sign up"}
+                {mode === "signup" ? t("auth.signIn") : t("auth.signUp")}
               </button>
             </div>
           </form>

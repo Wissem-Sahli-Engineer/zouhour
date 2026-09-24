@@ -4,6 +4,8 @@ import { ChatbotPanel } from "../features/chatbot/ChatbotPanel";
 import { ChatFab } from "../components/ChatFab";
 import { NotificationBell } from "../components/NotificationBell";
 import { GlobalSearch } from "../components/GlobalSearch";
+import { ThemeToggle } from "../components/ThemeToggle";
+import { LangToggle } from "../components/LangToggle";
 import Magnet from "../components/ui/magnet";
 import {
   IconBot,
@@ -23,22 +25,27 @@ import { DURATION, EASE, ScrollTrigger, gsap, useGSAP } from "../lib/gsap";
 import { destroyLenis, initLenis } from "../lib/lenis";
 import { useAuth } from "../store/auth";
 import { useUi } from "../store/ui";
+import { useI18n } from "../store/i18n";
 import { RouteTransition } from "./RouteTransition";
 
-const NAV_ACCOUNT = [
-  { to: "/", label: "Dashboard", icon: IconGrid, end: true },
-  { to: "/stats", label: "Stats", icon: IconChart },
-  { to: "/clients", label: "Clients", icon: IconPeople },
-  { to: "/accounting/tunisia", label: "Accounting TN", icon: IconLedger },
-  { to: "/accounting/libya", label: "Accounting LY", icon: IconLedger },
-];
+function navAccountItems(t) {
+  return [
+    { to: "/", label: t("nav.dashboard"), icon: IconGrid, end: true },
+    { to: "/stats", label: t("nav.stats"), icon: IconChart },
+    { to: "/clients", label: t("nav.clients"), icon: IconPeople },
+    { to: "/accounting/tunisia", label: t("nav.accountingTn"), icon: IconLedger },
+    { to: "/accounting/libya", label: t("nav.accountingLy"), icon: IconLedger },
+  ];
+}
 
-const NAV_HR = [
-  { to: "/MyRequests", label: "My Requests", icon: IconClipboard },
-  { to: "/EmployeeRequests", label: "Employee Requests", icon: IconUsersGear },
-  { to: "/Payroll", label: "Fiche de paie", icon: IconWallet },
-  { to: "/Users", label: "Users", icon: IconShield },
-];
+function navHrItems(t) {
+  return [
+    { to: "/MyRequests", label: t("nav.myRequests"), icon: IconClipboard },
+    { to: "/EmployeeRequests", label: t("nav.employeeRequests"), icon: IconUsersGear },
+    { to: "/Payroll", label: t("nav.payroll"), icon: IconWallet },
+    { to: "/Users", label: t("nav.users"), icon: IconShield },
+  ];
+}
 
 export function AppShell() {
   const sidebarRef = useRef(null);
@@ -49,6 +56,7 @@ export function AppShell() {
   const logout = useAuth((s) => s.logout);
   const sidebarOpen = useUi((s) => s.sidebarOpen);
   const toggleSidebar = useUi((s) => s.toggleSidebar);
+  const t = useI18n((s) => s.t);
 
   useGSAP(
     (context, contextSafe) => {
@@ -87,6 +95,8 @@ export function AppShell() {
   }, [location.pathname]);
 
   const isAdmin = user?.role === "Admin";
+  const NAV_ACCOUNT = navAccountItems(t);
+  const NAV_HR = navHrItems(t);
   const navAccount = isAdmin ? NAV_ACCOUNT : NAV_ACCOUNT.slice(0, 3);
   const navHr = isAdmin ? NAV_HR : NAV_HR.filter((item) => item.to === "/EmployeeRequests");
 
@@ -113,7 +123,7 @@ export function AppShell() {
             <span className="sidebar-brand-text">
               TCA
             </span>
-            <span style={{ whiteSpace: "nowrap", color: "var(--color-text-muted)", fontSize: "10px" }}>
+            <span style={{ whiteSpace: "nowrap", color: "var(--color-muted)", fontSize: "10px" }}>
               Tunisian consulting agency
             </span>
           </div>
@@ -175,7 +185,7 @@ export function AppShell() {
           >
             <IconBot size={18} style={{ flexShrink: 0 }} />
             <span data-label style={{ whiteSpace: "nowrap" }}>
-              AI Chatbot
+              {t("nav.aiChatbot")}
             </span>
           </button>
         </nav>
@@ -202,6 +212,8 @@ export function AppShell() {
           </div>
 
           <div className="header-right">
+            <LangToggle />
+            <ThemeToggle />
             <NotificationBell />
             <div className="user-badge">
               <div className="avatar-circle">
@@ -221,7 +233,7 @@ export function AppShell() {
                   className="btn-logout"
                 >
                   <IconLogout size={14} />
-                  Logout
+                  {t("header.logout")}
                 </button>
               </Magnet>
             </div>

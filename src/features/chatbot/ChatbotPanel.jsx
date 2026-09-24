@@ -4,16 +4,14 @@ import { DURATION, EASE, gsap, useGSAP } from "../../lib/gsap";
 import { useUi } from "../../store/ui";
 import { CHAT_API_URL } from "../../lib/config";
 import { captureScreenshot } from "../../lib/screenCapture";
-
-const STARTER = [
-  { role: "assistant", content: "I can pull case status, missing documents, and invoice balances — and read your passport scans. Turn on Live helper to attach a snapshot of this window with your next message." },
-];
+import { useI18n } from "../../store/i18n";
 
 export function ChatbotPanel() {
+  const t = useI18n((s) => s.t);
   const open = useUi((s) => s.chatbotOpen);
   const setChatbot = useUi((s) => s.setChatbot);
   const panelRef = useRef(null);
-  const [messages, setMessages] = useState(STARTER);
+  const [messages, setMessages] = useState(() => [{ role: "assistant", content: t("chatbot.panelStarter") }]);
   const [draft, setDraft] = useState("");
   const [liveHelper, setLiveHelper] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -62,10 +60,10 @@ export function ChatbotPanel() {
       });
       if (!res.ok) throw new Error(`request failed (${res.status})`);
       const data = await res.json();
-      const prefix = captureError ? `[Screen share failed: ${captureError} — replied without it]\n` : "";
-      setMessages((m) => [...m, { role: "assistant", content: prefix + (data.reply || "No response from the model.") }]);
+      const prefix = captureError ? t("chatbot.screenShareFailed").replace("{error}", captureError) + "\n" : "";
+      setMessages((m) => [...m, { role: "assistant", content: prefix + (data.reply || t("chatbot.noResponse")) }]);
     } catch (err) {
-      setMessages((m) => [...m, { role: "assistant", content: `Couldn't reach the assistant (${err.message}).` }]);
+      setMessages((m) => [...m, { role: "assistant", content: t("chatbot.panelUnreachable").replace("{error}", err.message) }]);
     } finally {
       setLoading(false);
     }
@@ -98,15 +96,15 @@ export function ChatbotPanel() {
       >
         <div>
           <p style={{ fontSize: "11px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.14em", color: "var(--color-muted)" }}>
-            Internal
+            {t("chatbot.internal")}
           </p>
-          <h2 style={{ fontSize: "16px", fontWeight: "700", color: "var(--color-ink)" }}>Agency assistant</h2>
+          <h2 style={{ fontSize: "16px", fontWeight: "700", color: "var(--color-ink)" }}>{t("chatbot.panelTitle")}</h2>
         </div>
         <button
           type="button"
           onClick={() => setChatbot(false)}
           className="icon-btn"
-          aria-label="Close chatbot"
+          aria-label={t("chatbot.closeChatbot")}
         >
           <IconClose />
         </button>
@@ -126,7 +124,7 @@ export function ChatbotPanel() {
           cursor: "pointer",
         }}
       >
-        <span>Live helper — capture this window with each message</span>
+        <span>{t("chatbot.liveHelper")}</span>
         <input
           type="checkbox"
           checked={liveHelper}
@@ -173,7 +171,7 @@ export function ChatbotPanel() {
               color: "var(--color-muted)",
             }}
           >
-            Thinking…
+            {t("chatbot.thinking")}
           </div>
         ) : null}
       </div>
@@ -190,7 +188,7 @@ export function ChatbotPanel() {
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="Ask about a file…"
+          placeholder={t("chatbot.askPlaceholder")}
           className="input-box"
           style={{ flex: 1 }}
         />
@@ -198,7 +196,7 @@ export function ChatbotPanel() {
           type="submit"
           className="btn btn-brand"
           style={{ width: "auto", padding: "10px 14px" }}
-          aria-label="Send"
+          aria-label={t("chatbot.send")}
           disabled={loading}
         >
           <IconSend />

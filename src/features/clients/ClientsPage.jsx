@@ -5,6 +5,7 @@ import { IconPlus } from "../../components/ui/Icons";
 import { Card } from "../../components/ui/nav";
 import Magnet from "../../components/ui/magnet";
 import { withToken } from "../../store/auth";
+import { useI18n } from "../../store/i18n";
 
 const CLIENTS_TABS = [
   { id: "normal", label: "All clients" },
@@ -22,6 +23,7 @@ const VISA_BADGE = {
 
 export function ClientsPage() {
   const navigate = useNavigate();
+  const t = useI18n((s) => s.t);
   const [clients, setClients] = useState([]);
   const [error, setError] = useState(false);
   const [query, setQuery] = useState("");
@@ -54,8 +56,8 @@ export function ClientsPage() {
       </div>
 
       <PageTitle
-        kicker="Database"
-        title="Clients"
+        kicker={t("clients.kicker")}
+        title={t("clients.title")}
         action={
           <Magnet padding={26} magnetStrength={14}>
             <Link
@@ -64,7 +66,7 @@ export function ClientsPage() {
               style={{ width: "auto", display: "inline-flex", gap: "8px", padding: "10px 18px" }}
             >
               <IconPlus size={16} />
-              Add client
+              {t("clients.addClient")}
             </Link>
           </Magnet>
         }
@@ -74,7 +76,7 @@ export function ClientsPage() {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Filter by name, passport, phone"
+          placeholder={t("clients.filterPlaceholder")}
           className="input-box"
           style={{ maxWidth: "380px" }}
         />
@@ -85,19 +87,19 @@ export function ClientsPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th style={{ width: "64px" }}>Photo</th>
-                <th>Name</th>
-                <th>Passport</th>
-                <th>Phone</th>
-                <th>Nationality</th>
-                <th>Visa status</th>
+                <th style={{ width: "64px" }}>{t("clients.photo")}</th>
+                <th>{t("clients.name")}</th>
+                <th>{t("clients.passport")}</th>
+                <th>{t("clients.phone")}</th>
+                <th>{t("clients.nationality")}</th>
+                <th>{t("clients.visaStatus")}</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={6} style={{ padding: "40px 16px", textAlign: "center", color: "var(--color-muted)" }}>
-                    {error ? "Could not reach the server." : "No clients match that filter."}
+                    {error ? "Could not reach the server." : t("clients.noMatches")}
                   </td>
                 </tr>
               ) : (

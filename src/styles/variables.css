@@ -16,6 +16,8 @@
   --color-surface: #f4f4f6;
   --color-white: #ffffff;
   --color-black: #000000;
+  --color-card-ink-bg: #1a1a1a;
+  --color-card-ink-text: #ffffff;
 
   /* Feedback */
   --color-danger: #e0455f;
@@ -24,6 +26,8 @@
   --color-danger-hover: #fca5a5;
   --color-success: #12a150;
   --color-success-bg: #dcfce7;
+  --color-warning-bg: #fef3c7;
+  --color-warning-text: #d97706;
   --color-whatsapp: #25D366;
 
   /* Typography */
@@ -62,4 +66,38 @@
   --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
   --duration-fast: 0.15s;
   --duration-normal: 0.25s;
+}
+
+/* Material/Google-style dark theme: a near-black base (#121212) with
+   slightly lighter "elevated" surfaces for cards, not flat pure black —
+   this is what makes text and borders actually readable. */
+:root[data-theme="dark"] {
+  --color-brand: #8ab4f8;
+  --color-brand-dark: #aecbfa;
+  --color-brand-wash: #28304a;
+
+  --color-ink: #e8eaed;
+  --color-ink-rgb: 232, 234, 237;
+  --color-muted: #9aa0a6;
+  --color-line: #3c4043;
+  --color-canvas: #0e0e10;
+  --color-surface: #121212;
+  --color-white: #1e1e1f;
+  --color-black: #e8eaed;
+  --color-card-ink-bg: #000000;
+  --color-card-ink-text: #e8eaed;
+
+  --color-danger: #f28b82;
+  --color-danger-text: #f28b82;
+  --color-danger-bg: #3f2325;
+  --color-danger-hover: #5c2b2e;
+  --color-success: #81c995;
+  --color-success-bg: #1e3a26;
+  --color-warning-bg: #3f371c;
+  --color-warning-text: #fdd663;
+
+  --shadow-login: 0 30px 60px -20px rgba(0, 0, 0, 0.7);
+  --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-bar: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --shadow-toast: 0 10px 30px rgba(0, 0, 0, 0.7);
 }

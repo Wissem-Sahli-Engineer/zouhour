@@ -4,8 +4,10 @@ import { BoxInput, Field } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { toast } from "../../components/ui/Toast";
 import { withToken } from "../../store/auth";
+import { useI18n } from "../../store/i18n";
 
 export function PayrollPage() {
+  const t = useI18n((s) => s.t);
   const [rows, setRows] = useState([]);
   const [period, setPeriod] = useState(new Date().toLocaleString("en", { month: "long", year: "numeric" }));
   const [busyRow, setBusyRow] = useState(null);
@@ -32,9 +34,9 @@ export function PayrollPage() {
       if (!res.ok) throw new Error("fail");
       const data = await res.json();
       setRows(data.map((r) => ({ ...r, hourly_rate: "" })));
-      toast(`Parsed ${data.length} employee${data.length === 1 ? "" : "s"} from the file`, "ok");
+      toast(`${t("payroll.parsed")} ${data.length} ${t("payroll.employeesWord")}`, "ok");
     } catch {
-      toast("Could not read the Excel file", "err");
+      toast(t("payroll.readFailed"), "err");
     } finally {
       setUploading(false);
     }
@@ -45,7 +47,7 @@ export function PayrollPage() {
 
   const generate = async (row, i) => {
     if (!row.hourly_rate) {
-      toast("Enter an hourly rate first", "err");
+      toast(t("payroll.enterRate"), "err");
       return;
     }
     setBusyRow(i);
@@ -65,16 +67,16 @@ export function PayrollPage() {
       const payslip = await res.json();
       window.open(withToken(`/api/payroll/payslips/${payslip.id}/pdf`), "_blank");
       loadHistory();
-      toast("Payslip generated", "ok");
+      toast(t("payroll.generated"), "ok");
     } catch {
-      toast("Could not generate payslip", "err");
+      toast(t("payroll.generateFailed"), "err");
     } finally {
       setBusyRow(null);
     }
   };
 
   const removePayslip = async (id) => {
-    if (!window.confirm("Remove this payslip?")) return;
+    if (!window.confirm(t("payroll.removeConfirm"))) return;
     await fetch(`/api/payroll/payslips/${id}`, { method: "DELETE" }).catch(() => {});
     loadHistory();
   };
@@ -93,27 +95,27 @@ export function PayrollPage() {
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch {
-      toast("Could not download the PDF", "err");
+      toast(t("payroll.downloadFailed"), "err");
     }
   };
 
   return (
     <div className="page-container-max">
-      <PageTitle kicker="Human resources" title="Fiche de paie" />
+      <PageTitle kicker={t("payroll.kicker")} title={t("payroll.title")} />
 
       <div className="card" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "16px", alignItems: "end", marginBottom: "20px" }}>
         <div>
           <label className="upload-dropzone" style={{ display: "block" }}>
             <div style={{ fontWeight: "600", fontSize: "15px", color: "var(--color-ink)" }}>
-              Upload pointage (Excel)
+              {t("payroll.uploadPointage")}
             </div>
             <div style={{ marginTop: "4px", fontSize: "13px", color: "var(--color-muted)" }}>
-              Columns: employee name, hours worked — {uploading ? "reading…" : ".xlsx"}
+              {t("payroll.columnsHint")} {uploading ? t("payroll.reading") : ".xlsx"}
             </div>
             <input type="file" accept=".xlsx,.xls" style={{ display: "none" }} onChange={onFile} />
           </label>
         </div>
-        <Field label="pay period">
+        <Field label={t("payroll.payPeriod")}>
           <BoxInput value={period} onChange={(e) => setPeriod(e.target.value)} />
         </Field>
       </div>
@@ -123,9 +125,9 @@ export function PayrollPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Employee</th>
-                <th>Hours</th>
-                <th>Hourly rate (TND)</th>
+                <th>{t("payroll.employeeCol")}</th>
+                <th>{t("payroll.hoursCol")}</th>
+                <th>{t("payroll.hourlyRateCol")}</th>
                 <th></th>
               </tr>
             </thead>
@@ -144,7 +146,7 @@ export function PayrollPage() {
                   </td>
                   <td>
                     <Button variant="brand" loading={busyRow === i} onClick={() => generate(row, i)} style={{ width: "auto", padding: "8px 14px", fontSize: "12px" }}>
-                      Generate fiche de paie
+                      {t("payroll.generate")}
                     </Button>
                   </td>
                 </tr>
@@ -156,15 +158,15 @@ export function PayrollPage() {
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--color-line)" }}>
-          <h2 style={{ fontSize: "16px", fontWeight: "700" }}>Generated payslips</h2>
+          <h2 style={{ fontSize: "16px", fontWeight: "700" }}>{t("payroll.generatedPayslips")}</h2>
         </div>
         <table className="data-table">
           <thead>
             <tr>
-              <th>Employee</th>
-              <th>Period</th>
-              <th>Hours</th>
-              <th>Gross total</th>
+              <th>{t("payroll.employeeCol")}</th>
+              <th>{t("payroll.periodCol")}</th>
+              <th>{t("payroll.hoursCol")}</th>
+              <th>{t("payroll.grossTotalCol")}</th>
               <th></th>
             </tr>
           </thead>
@@ -172,7 +174,7 @@ export function PayrollPage() {
             {history.length === 0 ? (
               <tr>
                 <td colSpan={5} style={{ padding: "32px 16px", textAlign: "center", color: "var(--color-muted)" }}>
-                  No payslips generated yet.
+                  {t("payroll.noPayslips")}
                 </td>
               </tr>
             ) : (
@@ -189,14 +191,14 @@ export function PayrollPage() {
                       className="btn btn-brand"
                       style={{ width: "auto", padding: "6px 14px", fontSize: "12px", display: "inline-flex" }}
                     >
-                      Download PDF
+                      {t("payroll.downloadPdf")}
                     </button>
                     <button
                       type="button"
                       onClick={() => removePayslip(p.id)}
                       style={{ color: "var(--color-danger)", fontSize: "12px", fontWeight: "600" }}
                     >
-                      Remove
+                      {t("payroll.remove")}
                     </button>
                   </td>
                 </tr>

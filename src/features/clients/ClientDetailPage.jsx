@@ -3,8 +3,10 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import Magnet from "../../components/ui/magnet";
 import { toast } from "../../components/ui/Toast";
 import { withToken } from "../../store/auth";
+import { useI18n } from "../../store/i18n";
 
 export function ClientDetailPage() {
+  const t = useI18n((s) => s.t);
   const { id } = useParams();
   const navigate = useNavigate();
   const [client, setClient] = useState(null);
@@ -21,20 +23,20 @@ export function ClientDetailPage() {
   useEffect(loadFiles, [id]);
 
   const removeFile = async (fileId) => {
-    if (!window.confirm("Remove this file?")) return;
+    if (!window.confirm(t("clients.removeFile"))) return;
     await fetch(`/api/clients/${id}/files/${fileId}`, { method: "DELETE" }).catch(() => {});
     loadFiles();
   };
 
   const removeClient = async () => {
-    if (!window.confirm("Remove this client permanently? This cannot be undone.")) return;
+    if (!window.confirm(t("clients.removeConfirm"))) return;
     try {
       const res = await fetch(`/api/clients/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("fail");
-      toast("Client removed", "ok");
+      toast(t("clients.removed"), "ok");
       navigate("/clients");
     } catch {
-      toast("Could not remove client", "err");
+      toast(t("clients.removeFailed"), "err");
     }
   };
 
@@ -61,42 +63,44 @@ export function ClientDetailPage() {
     return (
       <div style={{ margin: "0 auto", maxWidth: "900px" }}>
         <Link to="/clients" style={{ fontSize: "13px", fontWeight: "600", color: "var(--color-brand)" }}>
-          ← Clients
+          {t("clients.backToClients")}
         </Link>
-        <p style={{ marginTop: "24px", color: "var(--color-muted)" }}>Client not found.</p>
+        <p style={{ marginTop: "24px", color: "var(--color-muted)" }}>{t("clients.notFound")}</p>
       </div>
     );
   }
 
   if (!client) {
-    return <p style={{ color: "var(--color-muted)" }}>Loading file…</p>;
+    return <p style={{ color: "var(--color-muted)" }}>{t("clients.loadingFile")}</p>;
   }
 
+  const l = (key) => t(`clients.labels.${key}`);
+
   const fields = [
-    ["Full name", `${client.given_name} ${client.surname}`],
-    ["Date of birth", client.date_of_birth],
-    ["Nationality", client.nationality],
-    ["Passport number", client.passport_number],
-    ["Expiry", client.date_of_expiry],
-    ["Place of birth", client.place_of_birth],
-    ["Issued by", client.issued_by],
-    ["Phone", client.phone],
-    ["Email", client.email],
-    ["Entreprise", client.entreprise_name],
-    ["Code fiscal", client.code_fiscal],
-    ["Visa status", client.visa_status],
-    ["Visa type", client.visa_type],
-    ["Client relation", client.client_relation],
-    ["Prix dossier", client.prix_dossier],
-    ["Paiement type", client.paiement_type],
-    ["Currency", client.currency],
+    [l("fullName"), `${client.given_name} ${client.surname}`],
+    [l("dateOfBirth"), client.date_of_birth],
+    [l("nationality"), client.nationality],
+    [l("passportNumber"), client.passport_number],
+    [l("expiry"), client.date_of_expiry],
+    [l("placeOfBirth"), client.place_of_birth],
+    [l("issuedBy"), client.issued_by],
+    [l("phone"), client.phone],
+    [l("email"), client.email],
+    [l("entreprise"), client.entreprise_name],
+    [l("codeFiscal"), client.code_fiscal],
+    [l("visaStatus"), client.visa_status],
+    [l("visaType"), client.visa_type],
+    [l("clientRelation"), client.client_relation],
+    [l("prixDossier"), client.prix_dossier],
+    [l("paiementType"), client.paiement_type],
+    [l("currency"), client.currency],
   ];
 
   return (
     <div style={{ margin: "0 auto", maxWidth: "1100px" }}>
       <div className="flex-between">
         <Link to="/clients" style={{ fontSize: "13px", fontWeight: "600", color: "var(--color-brand)" }}>
-          ← Clients
+          {t("clients.backToClients")}
         </Link>
         <div style={{ display: "flex", gap: "10px" }}>
           <Magnet padding={26} magnetStrength={14}>
@@ -105,7 +109,7 @@ export function ClientDetailPage() {
               className="btn btn-brand"
               style={{ width: "auto", padding: "8px 16px", fontSize: "13px" }}
             >
-              Edit client
+              {t("clients.editClient")}
             </Link>
           </Magnet>
           <Magnet padding={26} magnetStrength={14}>
@@ -115,7 +119,7 @@ export function ClientDetailPage() {
               className="btn btn-danger"
               style={{ width: "auto", padding: "8px 16px", fontSize: "13px" }}
             >
-              Remove client
+              {t("clients.removeClient")}
             </button>
           </Magnet>
         </div>
@@ -134,12 +138,12 @@ export function ClientDetailPage() {
                 className="flex-center"
                 style={{ height: "280px", backgroundColor: "var(--color-surface)", color: "var(--color-muted)" }}
               >
-                No portrait on file
+                {t("clients.noFiles")}
               </div>
             )}
             <div style={{ padding: "20px" }}>
               <p style={{ fontSize: "12px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.14em", color: "var(--color-muted)" }}>
-                Passport holder
+                {l("passportNumber")}
               </p>
               <h1 style={{ marginTop: "4px", fontSize: "22px", fontWeight: "700", color: "var(--color-ink)" }}>
                 {client.given_name} {client.surname}
@@ -153,7 +157,7 @@ export function ClientDetailPage() {
 
         <div className="col-8" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           <div className="card" style={{ padding: "24px" }}>
-            <h2 style={{ marginBottom: "16px", fontSize: "16px", fontWeight: "700" }}>Personal information</h2>
+            <h2 style={{ marginBottom: "16px", fontSize: "16px", fontWeight: "700" }}>{t("clients.personalInfo")}</h2>
             <dl className="grid-2" style={{ gap: "16px 24px" }}>
               {fields.map(([k, v]) => (
                 <div key={k} style={{ borderBottom: "1px solid var(--color-line)", paddingBottom: "8px" }}>
@@ -167,9 +171,9 @@ export function ClientDetailPage() {
           </div>
 
           <div className="card" style={{ padding: "24px" }}>
-            <h2 style={{ marginBottom: "12px", fontSize: "16px", fontWeight: "700" }}>Documents</h2>
+            <h2 style={{ marginBottom: "12px", fontSize: "16px", fontWeight: "700" }}>{t("clients.documents")}</h2>
             {files.length === 0 ? (
-              <p style={{ fontSize: "13px", color: "var(--color-muted)" }}>No files uploaded yet.</p>
+              <p style={{ fontSize: "13px", color: "var(--color-muted)" }}>{t("clients.noFiles")}</p>
             ) : (
               <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px" }}>
                 {files.map((f) => (
@@ -178,7 +182,7 @@ export function ClientDetailPage() {
                       {f.filename}
                     </a>
                     <button type="button" onClick={() => removeFile(f.id)} style={{ color: "var(--color-danger)", fontSize: "12px", fontWeight: "600" }}>
-                      Remove
+                      {t("common.remove")}
                     </button>
                   </li>
                 ))}

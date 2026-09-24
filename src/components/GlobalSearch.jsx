@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IconSearch } from "./ui/Icons";
 import { useUi } from "../store/ui";
+import { useI18n } from "../store/i18n";
 
 const COUNTRIES = ["tunisia", "libya"];
 
 export function GlobalSearch() {
   const navigate = useNavigate();
+  const t = useI18n((s) => s.t);
   const search = useUi((s) => s.search);
   const setSearch = useUi((s) => s.setSearch);
   const [open, setOpen] = useState(false);
@@ -78,7 +80,7 @@ export function GlobalSearch() {
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
-          placeholder="Search clients, invoices…"
+          placeholder={t("header.search")}
           className="search-bar-input"
         />
       </label>
