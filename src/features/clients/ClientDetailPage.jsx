@@ -1,18 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { FALLBACK_CLIENTS, enrich } from "./mock";
 import Magnet from "../../components/ui/magnet";
 import { toast } from "../../components/ui/Toast";
-
-const STATUS_TONE = {
-  paid: "var(--color-success)",
-  pending: "var(--color-accent-orange)",
-  overdue: "var(--color-danger)",
-  "In review": "var(--color-brand)",
-  "Pending docs": "var(--color-accent-orange)",
-  Submitted: "var(--color-muted)",
-  Approved: "var(--color-success)",
-};
 
 export function ClientDetailPage() {
   const { id } = useParams();
@@ -53,22 +42,14 @@ export function ClientDetailPage() {
     fetch("/api/clients")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => {
-        const found = (Array.isArray(data) ? data : []).map(enrich).find((c) => String(c.id) === String(id));
+        const found = (Array.isArray(data) ? data : []).find((c) => String(c.id) === String(id));
         if (!cancelled) {
-          if (found) setClient(found);
-          else {
-            const fb = FALLBACK_CLIENTS.map(enrich).find((c) => String(c.id) === String(id));
-            setClient(fb || null);
-            setMissing(!fb);
-          }
+          setClient(found || null);
+          setMissing(!found);
         }
       })
       .catch(() => {
-        const fb = FALLBACK_CLIENTS.map(enrich).find((c) => String(c.id) === String(id));
-        if (!cancelled) {
-          setClient(fb || null);
-          setMissing(!fb);
-        }
+        if (!cancelled) setMissing(true);
       });
     return () => {
       cancelled = true;
@@ -185,57 +166,23 @@ export function ClientDetailPage() {
           </div>
 
           <div className="card" style={{ padding: "24px" }}>
-            <h2 style={{ marginBottom: "16px", fontSize: "16px", fontWeight: "700" }}>Visa applications</h2>
-            <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "12px" }}>
-              {client.applications.map((a) => (
-                <li
-                  key={a.id}
-                  className="flex-between"
-                  style={{ borderBottom: "1px solid var(--color-line)", paddingBottom: "12px" }}
-                >
-                  <div>
-                    <p style={{ fontWeight: "600" }}>{a.id}</p>
-                    <p style={{ fontSize: "13px", color: "var(--color-muted)" }}>{a.type}</p>
-                  </div>
-                  <span style={{ fontSize: "13px", fontWeight: "600", color: STATUS_TONE[a.status] || "var(--color-ink)" }}>
-                    {a.status}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="grid-2">
-            <div className="card" style={{ padding: "24px" }}>
-              <h2 style={{ marginBottom: "12px", fontSize: "16px", fontWeight: "700" }}>Documents</h2>
-              {files.length === 0 ? (
-                <p style={{ fontSize: "13px", color: "var(--color-muted)" }}>No files uploaded yet.</p>
-              ) : (
-                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px" }}>
-                  {files.map((f) => (
-                    <li key={f.id} className="flex-between" style={{ borderBottom: "1px solid var(--color-line)", padding: "8px 0" }}>
-                      <a href={f.url} target="_blank" rel="noreferrer" style={{ color: "var(--color-brand)" }}>
-                        {f.filename}
-                      </a>
-                      <button type="button" onClick={() => removeFile(f.id)} style={{ color: "var(--color-danger)", fontSize: "12px", fontWeight: "600" }}>
-                        Remove
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            <div className="card" style={{ padding: "24px" }}>
-              <h2 style={{ marginBottom: "12px", fontSize: "16px", fontWeight: "700" }}>Invoices</h2>
+            <h2 style={{ marginBottom: "12px", fontSize: "16px", fontWeight: "700" }}>Documents</h2>
+            {files.length === 0 ? (
+              <p style={{ fontSize: "13px", color: "var(--color-muted)" }}>No files uploaded yet.</p>
+            ) : (
               <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px" }}>
-                {client.invoices.map((inv) => (
-                  <li key={inv.id} className="flex-between" style={{ borderBottom: "1px solid var(--color-line)", padding: "8px 0" }}>
-                    <span>{inv.id}</span>
-                    <span style={{ fontWeight: "600", color: STATUS_TONE[inv.status] }}>{inv.amount}</span>
+                {files.map((f) => (
+                  <li key={f.id} className="flex-between" style={{ borderBottom: "1px solid var(--color-line)", padding: "8px 0" }}>
+                    <a href={f.url} target="_blank" rel="noreferrer" style={{ color: "var(--color-brand)" }}>
+                      {f.filename}
+                    </a>
+                    <button type="button" onClick={() => removeFile(f.id)} style={{ color: "var(--color-danger)", fontSize: "12px", fontWeight: "600" }}>
+                      Remove
+                    </button>
                   </li>
                 ))}
               </ul>
-            </div>
+            )}
           </div>
         </div>
       </div>

@@ -1,169 +1,196 @@
-# Zouhour ERP — Quickstart Guide (macOS)
+# TCA ERP — Quickstart Guide (macOS)
 
-A modern ERP platform for client management featuring AI-assisted passport extraction (OCR & portrait cropping) built with **React + Vite**, **FastAPI**, and local **Ollama Vision AI**.
+An internal ERP for **Tunisie Conseil et Assistance (TCA)** — client/visa case management, accounting (invoices, treasury, banking), HR (requests, payroll), and a local AI assistant. Built with **React + Vite**, **FastAPI + SQLModel + PostgreSQL**, a local **Ollama** model (vision extraction + chat), and **LaTeX (TinyTeX)** for PDF generation.
 
 ---
 
-## 🛠 Prerequisites for macOS
+## Features
 
-Before starting, ensure you have the following installed on your Mac:
+- **Dashboard & Stats** — treasury net, bank reserves, client/invoice counts, visa-status breakdown, clients-by-country, factures-vs-reçus, payroll cost per period — all computed from live data.
+- **Clients** — add/edit/remove, AI passport extraction (OCR via Ollama vision model), manual client photo upload, arbitrary file attachments, visa status tracking.
+- **Accounting** (per country: Tunisia / Libya)
+  - **Invoices** — generate *factures* and *reçus* as real PDFs from your LaTeX templates (`backend/invoice_templates/`), download or remove.
+  - **Treasury** — spending/gathering ledger, current-month totals (auto-resets each month since it's just filtered by date), historical monthly chart.
+  - **Banking** — accounts, balances, transactions.
+- **Human Resources**
+  - **My Requests** — admin's own request log (name, description, status).
+  - **Employee Requests** — vacations / salary advances / loans, submitted by any signed-in user.
+  - **Fiche de paie** (Payroll) — upload an Excel timesheet ("pointage"), enter each employee's hourly rate, generate a payslip PDF.
+- **AI Chatbot** — a full assistant page (persists across navigation) and a small popup panel with a "Live helper" mode that attaches a snapshot of the current window to your question.
+- **Role-based sidebar** — `Admin` sees everything; any other role sees Dashboard/Stats/Clients + Employee Requests + Chatbot only.
 
-1. **Homebrew** (recommended package manager):
+---
+
+## Prerequisites (macOS)
+
+1. **Homebrew**
    ```bash
    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
    ```
-2. **Node.js** (v18 or newer):
+2. **Node.js** (v18+)
    ```bash
    brew install node
-   # Verify: node -v && npm -v
    ```
-3. **Python 3** (3.10+):
+3. **Python 3** (3.10+)
    ```bash
    brew install python
-   # Verify: python3 --version
    ```
-4. **Ollama** (for local Vision AI extraction):
+4. **PostgreSQL**
+   ```bash
+   brew install postgresql@16
+   brew services start postgresql@16
+   ```
+5. **Ollama** (local LLM — vision extraction + chat)
    ```bash
    brew install ollama
-   # Or download the macOS desktop app from https://ollama.com
+   ollama serve   # or use the Ollama desktop app
+   ollama pull qwen2.5vl:3b-8k
    ```
+6. **TinyTeX** (LaTeX engine for invoice/payslip PDFs — no admin password needed, unlike MacTeX)
+   ```bash
+   curl -sL "https://yihui.org/tinytex/install-bin-unix.sh" | sh
+   export PATH="$HOME/Library/TinyTeX/bin/universal-darwin:$PATH"   # add to your shell profile
+   tlmgr install colortbl tikzfill collection-latexextra collection-pictures collection-langarabic collection-fontsextra
+   ```
+   The reçu template renders Arabic text with the Amiri font; its `.ttf` files already live in `backend/invoice_templates/` and are loaded by path, so no system font install is required.
 
 ---
 
-## 📦 Installation
-
-Open **Terminal** and navigate to the project directory:
+## Installation
 
 ```bash
 cd /path/to/zouhour
 ```
 
-### 1. Install Frontend Dependencies
+### 1. Frontend dependencies
 ```bash
 npm install
 ```
 
-### 2. Set Up Python Virtual Environment & Backend Dependencies
-Using a virtual environment is the recommended standard on macOS:
-
+### 2. Python virtual environment & backend dependencies
 ```bash
-# Create virtual environment
 python3 -m venv .venv
-
-# Activate it
 source .venv/bin/activate
-
-# Install requirements
 pip install -r requirements.txt
 ```
 
-### 3. Set Up the PostgreSQL Database
-Clients are stored in PostgreSQL (18, installed at `/Library/PostgreSQL/18`). Create an app role and database once, as the `postgres` admin:
-
+### 3. Database
+Create the app role and database once, as the `postgres` admin:
 ```bash
-/Library/PostgreSQL/18/bin/psql -U postgres -h localhost \
+psql -U $(whoami) -h localhost -d postgres \
   -c "CREATE ROLE zouhour LOGIN PASSWORD 'your_app_password';" \
   -c "CREATE DATABASE zouhour OWNER zouhour;"
 ```
 
-Copy `.env.example` to `.env` and put the app password in `DATABASE_URL` (no quotes). Then create the tables:
-
+Copy `.env.example` to `.env` and put the app password in `DATABASE_URL`. Then create the tables:
 ```bash
 .venv/bin/alembic upgrade head
 ```
 
-Optional, one time: import the old `clients.json` (duplicates are skipped, safe to re-run):
-
-```bash
-.venv/bin/python -m backend.import_clients_json
-```
-
-Passport photos are saved as files in `uploads/clients/` (git-ignored); the database stores only their path. Back up both:
-
-```bash
-/Library/PostgreSQL/18/bin/pg_dump -U zouhour -h localhost zouhour > backup.sql
-```
-
-After changing `backend/models.py`, create and apply a migration:
-
+After changing `backend/models.py`, create and apply a new migration:
 ```bash
 .venv/bin/alembic revision --autogenerate -m "describe the change"
 .venv/bin/alembic upgrade head
 ```
 
-### 4. Download the Vision AI Model
-Download the Qwen2.5-VL model required for passport extraction:
-
+Backups:
 ```bash
-ollama pull qwen2.5vl:3b-8k
+pg_dump -U zouhour -h localhost zouhour > backup.sql
 ```
 
+Client photos, other client files, generated invoice PDFs, and generated payslip PDFs are all saved under `uploads/` (git-ignored); the database stores only their paths.
+
+**Everything the app persists lives in this one Postgres database** — clients, treasury entries, bank accounts/transactions, invoices, agency/employee requests, and payslips. There is no JSON file, mock data, or hardcoded fallback anywhere in the app anymore; if the API can't be reached, pages show an empty/error state instead of fake data.
+
 ---
 
-## 🚀 Launching the Application
+## Working with the database
 
-To run the full stack, you need **3 services** running concurrently (open 3 separate Terminal tabs/windows or run in the background):
+Day to day, you add/edit/remove data **through the app** — every screen is wired to a real endpoint that reads and writes Postgres. The steps below are for looking at the data directly or fixing something by hand.
 
-### Tab 1: Ollama Service
-*(Skip if you already have the Ollama macOS desktop menu bar app running)*
+### Connect with `psql` (already installed with Postgres)
+
 ```bash
-ollama serve
+psql -U zouhour -h localhost -d zouhour
 ```
-> Quick test to verify Ollama is active:
-> ```bash
-> curl http://localhost:11434/
-> # Should return: "Ollama is running"
-> ```
+It'll prompt for the password you set in `DATABASE_URL`. Useful commands once connected:
 
----
-
-### Tab 2: Backend API (FastAPI)
-Run from the root project directory:
-```bash
-source .venv/bin/activate
-uvicorn backend.backend:app --host 0.0.0.0 --port 8001 --reload
+```sql
+\dt                        -- list all tables
+\d clients                 -- show a table's columns/types
+SELECT * FROM clients;     -- view all rows
+SELECT count(*) FROM invoices WHERE country = 'tunisia';
+\q                         -- quit
 ```
-- API runs at: `http://localhost:8001`
-- Swagger Docs available at: `http://localhost:8001/docs`
 
----
-
-### Tab 3: Frontend (Vite + React)
-```bash
-npm run dev
+To add or fix a row by hand (rare — prefer the UI):
+```sql
+UPDATE clients SET visa_status = 'approved' WHERE id = 3;
+DELETE FROM treasury_entries WHERE id = 12;
+INSERT INTO agency_requests (name, description, submitted_date, status)
+  VALUES ('Renew license', 'Annual operating license renewal', '2026-10-01', 'pending');
 ```
-- Web Application runs at: [http://localhost:5173](http://localhost:5173)
+
+### Prefer a GUI?
+
+Any Postgres client works against the same `DATABASE_URL` (host `localhost`, port `5432`, db `zouhour`, user `zouhour`):
+- **TablePlus** or **Postico** (macOS apps, free tier is enough) — browse/edit tables like a spreadsheet.
+- **pgAdmin** (web-based, cross-platform).
+- VS Code's **PostgreSQL** extension, if you'd rather stay in the editor.
+
+### What's in each table
+
+| Table | Holds |
+|---|---|
+| `clients` | Passport/visa case data, one row per client |
+| `client_files` | Uploaded documents, linked to a client |
+| `treasury_entries` | Spending/gathering ledger lines |
+| `bank_accounts` | Bank accounts per country |
+| `bank_transactions` | Deposits/withdrawals, linked to an account |
+| `invoices` | Factures/reçus, with the line items stored as JSON in `items_json` |
+| `agency_requests` | "My Requests" (admin's own log) |
+| `employee_requests` | Vacations / salary advances / loans |
+| `payslips` | Generated fiche de paie records |
+| `alembic_version` | Internal — tracks which migration is applied. Don't edit. |
+
+### Changing the schema
+
+Never edit tables by hand to add a column — change `backend/models.py` instead, then generate and apply a migration (see the Database section above: `alembic revision --autogenerate` + `alembic upgrade head`). That keeps the Python models, the database, and everyone else's database in sync.
 
 ---
 
-## 🧭 How to Use
+## Running the app
 
-1. **Access the App**:
-   - Open your browser to [http://localhost:5173](http://localhost:5173).
-2. **Sign In**:
-   - Enter your email address (e.g., `agent@zouhour.com`) and any password to access the dashboard.
-3. **Passport AI Extraction**:
-   - Go to the **Scan / Upload** page.
-   - Upload or drag-and-drop a passport photo (JPEG/PNG).
-   - The backend sends the image to Ollama (`qwen2.5vl:3b-8k`), extracts all client attributes, and automatically crops the passport portrait photo.
-   - Review and save the client to the database (`clients.json`).
-4. **Client Management**:
-   - View, search, and manage clients in the **Clients** list.
+Four things need to be running at once:
+
+| # | Service | Command | URL |
+|---|---------|---------|-----|
+| 1 | PostgreSQL | `brew services start postgresql@16` (if not already running) | `localhost:5432` |
+| 2 | Ollama | `ollama serve` (skip if the desktop app is running) | `localhost:11434` |
+| 3 | Backend (FastAPI) | `.venv/bin/python -m backend.backend` | `localhost:8001` (docs at `/docs`) |
+| 4 | Frontend (Vite) | `npm run dev` | `localhost:5173` |
+
+Open [http://localhost:5173](http://localhost:5173) and sign in with a user from `admin.json` (`role: "Admin"` unlocks Accounting, My Requests, and Fiche de paie).
 
 ---
 
-## ⚡ Useful macOS Shortcuts & Troubleshooting
+## Configuration reference
 
-- **Port 8001 already in use?**
-  ```bash
-  kill -9 $(lsof -t -i:8001)
-  ```
-- **Port 5173 already in use?**
-  ```bash
-  kill -9 $(lsof -t -i:5173)
-  ```
-- **Backend not finding `clients.json`?**
-  Always start the backend server from the project root:
-  ```bash
-  uvicorn backend.backend:app --host 0.0.0.0 --port 8001 --reload
-  ```
+- `.env` — `DATABASE_URL` for Postgres.
+- `admin.json` — local user accounts for the dev login (`name`, `email`, `password`, `role`). Signups append here with `role: "Agent"` by default.
+- `src/lib/config.js` — `CHAT_API_URL` (proxied to the backend's `/chat`).
+- `backend/backend.py` — `CHAT_MODEL` constant (Ollama model used for the assistant and OCR extraction, default `qwen2.5vl:3b-8k`).
+- `backend/invoice_templates/facture.tex` / `recu.tex` — the actual LaTeX source for generated invoices/receipts. Edit these to change the design; placeholders like `%%CLIENT_NAME%%` are substituted at generation time.
+- `backend/payroll_template.tex` — LaTeX source for the payslip PDF.
+
+---
+
+## Troubleshooting
+
+- **Port 8001 already in use**: `kill -9 $(lsof -t -i:8001)`
+- **Port 5173 already in use**: `kill -9 $(lsof -t -i:5173)`
+- **`DATABASE_URL` KeyError on backend start**: `.env` is missing or the backend wasn't started from the project root.
+- **`pdflatex`/`xelatex: command not found` when generating a PDF**: TinyTeX isn't on the backend process's PATH. `backend/invoices.py` and `backend/payroll.py` auto-detect `~/Library/TinyTeX/bin/*`; if you installed it elsewhere, adjust `_tex_bin_dir()` in `backend/invoices.py`.
+- **Invoice/payslip PDF fails with a LaTeX error**: run the same `pdflatex`/`xelatex` command by hand inside `uploads/invoices/<number>/` or `uploads/payslips/<number>/` to see the full log — the work directory and rendered `.tex` file are left in place.
+- **Chat says it can't reach the assistant**: confirm `ollama serve` is running and `qwen2.5vl:3b-8k` is pulled (`ollama list`).
+- **Backend not finding the app package**: always start it as `python -m backend.backend` (or `uvicorn backend.backend:app`) from the project root, never `cd backend && python backend.py`.

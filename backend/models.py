@@ -122,26 +122,6 @@ class BankTransactionCreate(BankTransactionBase):
     pass
 
 
-class BankLoanBase(SQLModel):
-    account_id: int | None = Field(default=None, foreign_key="bank_accounts.id")
-    lender: str = Field(max_length=150)
-    principal: float
-    remaining: float
-    monthly_payment: float | None = None
-    start_date: date
-    status: str = Field(default="active", max_length=20)  # active | paid | defaulted
-
-
-class BankLoan(BankLoanBase, table=True):
-    __tablename__ = "bank_loans"
-
-    id: int | None = Field(default=None, primary_key=True)
-
-
-class BankLoanCreate(BankLoanBase):
-    pass
-
-
 class InvoiceItem(SQLModel):
     designation: str
     quantity: float

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { PageTitle } from "../../components/ui/Card";
 import { IconPlus } from "../../components/ui/Icons";
-import { FALLBACK_CLIENTS, enrich } from "./mock";
 import { Card } from "../../components/ui/nav";
 import Magnet from "../../components/ui/magnet";
 
@@ -23,6 +22,7 @@ const VISA_BADGE = {
 export function ClientsPage() {
   const navigate = useNavigate();
   const [clients, setClients] = useState([]);
+  const [error, setError] = useState(false);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -30,10 +30,10 @@ export function ClientsPage() {
     fetch("/api/clients")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => {
-        if (!cancelled) setClients((Array.isArray(data) ? data : []).map(enrich));
+        if (!cancelled) setClients(Array.isArray(data) ? data : []);
       })
       .catch(() => {
-        if (!cancelled) setClients(FALLBACK_CLIENTS.map(enrich));
+        if (!cancelled) setError(true);
       });
     return () => {
       cancelled = true;
@@ -96,7 +96,7 @@ export function ClientsPage() {
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={6} style={{ padding: "40px 16px", textAlign: "center", color: "var(--color-muted)" }}>
-                    No clients match that filter.
+                    {error ? "Could not reach the server." : "No clients match that filter."}
                   </td>
                 </tr>
               ) : (
