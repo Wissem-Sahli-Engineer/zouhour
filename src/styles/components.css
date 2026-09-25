@@ -275,7 +275,7 @@
 .chat-fab-wrap {
   position: fixed;
   bottom: 24px;
-  right: 24px;
+  inset-inline-end: 24px;
   z-index: 40;
 }
 
@@ -466,7 +466,7 @@
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  text-align: left;
+  text-align: start;
 }
 
 .data-table th {

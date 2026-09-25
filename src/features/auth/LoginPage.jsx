@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Cast } from "../../components/Cast";
 import { Button } from "../../components/ui/Button";
@@ -9,13 +9,17 @@ import { EASE, gsap, useGSAP } from "../../lib/gsap";
 import { useAuth } from "../../store/auth";
 import { useI18n } from "../../store/i18n";
 
+// The login/signup screen is always shown in English, left-to-right,
+// regardless of the app's language setting — there's no account yet to
+// have a language preference for, and it keeps the very first screen
+// simple to support.
 export function LoginPage() {
   const navigate = useNavigate();
   const panelRef = useRef(null);
   const signup = useAuth((s) => s.signup);
   const login = useAuth((s) => s.login);
   const token = useAuth((s) => s.token);
-  const t = useI18n((s) => s.t);
+  const isRtl = useI18n((s) => s.isRtl);
 
   const [mode, setMode] = useState("login");
   const [showPass, setShowPass] = useState(false);
@@ -28,6 +32,14 @@ export function LoginPage() {
     password: "",
     remember: true,
   });
+
+  useEffect(() => {
+    document.documentElement.setAttribute("dir", "ltr");
+    return () => {
+      document.documentElement.setAttribute("dir", isRtl ? "rtl" : "ltr");
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const play = (kind) => {
     setReaction(kind);
@@ -56,6 +68,13 @@ export function LoginPage() {
     setForm((f) => ({ ...f, [key]: value }));
   };
 
+  const onEnterKey = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      submit(e);
+    }
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     const next = {};
@@ -79,7 +98,7 @@ export function LoginPage() {
       if (mode === "signup") {
         await signup({ name: form.name, email: form.email, password: form.password });
         play("nod");
-        toast(t("auth.pendingApproval"), "ok");
+        toast("Request submitted — an admin needs to approve it before you can sign in.", "ok");
         setMode("login");
         setForm((f) => ({ ...f, password: "" }));
         return;
@@ -91,7 +110,7 @@ export function LoginPage() {
         remember: form.remember,
       });
       play("nod");
-      toast(t("auth.welcomeBack"), "ok");
+      toast("Welcome back!", "ok");
       navigate("/");
     } catch (err) {
       play("shake");
@@ -102,7 +121,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="login-view-wrapper">
+    <div className="login-view-wrapper" dir="ltr">
       <div className="login-card">
         <div className="login-stage-container">
           <Cast reaction={reaction} />
@@ -119,17 +138,18 @@ export function LoginPage() {
           >
             <img src="./logo.png" className="login-logo" data-enter alt="Logo" />
             <p className="login-subtitle" data-enter>
-              {mode === "signup" ? t("auth.signUpSubtitle") : t("auth.signInSubtitle")}
+              {mode === "signup" ? "Request an account — an admin will need to approve it" : "Sign in to your account"}
             </p>
           </div>
 
           <form className="login-form" onSubmit={submit} noValidate>
             {mode === "signup" ? (
-              <Field label={t("auth.fullName")} error={errors.name}>
+              <Field label="Full name" error={errors.name}>
                 <div data-enter>
                   <UnderlineInput
                     value={form.name}
                     onChange={onChange("name")}
+                    onKeyDown={onEnterKey}
                     placeholder="Your name"
                     error={errors.name}
                   />
@@ -137,11 +157,12 @@ export function LoginPage() {
               </Field>
             ) : null}
 
-            <Field label={t("auth.email")} error={errors.email}>
+            <Field label="Email" error={errors.email}>
               <div data-enter>
                 <UnderlineInput
                   value={form.email}
                   onChange={onChange("email")}
+                  onKeyDown={onEnterKey}
                   autoComplete="username"
                   placeholder="agent@gmail.com"
                   error={errors.email}
@@ -149,7 +170,7 @@ export function LoginPage() {
               </div>
             </Field>
 
-            <Field label={t("auth.password")} error={errors.password}>
+            <Field label="Password" error={errors.password}>
               <div
                 style={{
                   position: "relative",
@@ -162,6 +183,7 @@ export function LoginPage() {
                   type={showPass ? "text" : "password"}
                   value={form.password}
                   onChange={onChange("password")}
+                  onKeyDown={onEnterKey}
                   autoComplete={mode === "signup" ? "new-password" : "current-password"}
                   placeholder="••••••••"
                   error={errors.password}
@@ -185,19 +207,19 @@ export function LoginPage() {
                     checked={form.remember}
                     onChange={onChange("remember")}
                   />
-                  {t("auth.rememberMe")}
+                  Remember me
                 </label>
               </div>
             ) : null}
 
             <div data-enter>
               <Button type="submit" variant="brand" loading={loading}>
-                {mode === "signup" ? t("auth.requestAccount") : t("auth.signIn")}
+                {mode === "signup" ? "Request account" : "Sign in"}
               </Button>
             </div>
 
             <div className="signup-prompt-row" data-enter>
-              {mode === "signup" ? t("auth.alreadyHaveAccount") : t("auth.dontHaveAccount")}{" "}
+              {mode === "signup" ? "Already have an account?" : "Don't have an account?"}{" "}
               <button
                 type="button"
                 className="signup-link-btn"
@@ -207,7 +229,7 @@ export function LoginPage() {
                   play("nod");
                 }}
               >
-                {mode === "signup" ? t("auth.signIn") : t("auth.signUp")}
+                {mode === "signup" ? "Sign in" : "Sign up"}
               </button>
             </div>
           </form>

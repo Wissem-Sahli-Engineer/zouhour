@@ -17,6 +17,7 @@ const BADGE_TONE = {
 export function EmployeeRequestsPage() {
   const t = useI18n((s) => s.t);
   const user = useAuth((s) => s.user);
+  const isAdmin = user?.role === "Admin";
   const [tab, setTab] = useState("vacations");
   const [requests, setRequests] = useState([]);
   const [detail, setDetail] = useState("");
@@ -103,13 +104,13 @@ export function EmployeeRequestsPage() {
               <th>{t("requests.detailCol")}</th>
               <th>{t("requests.submittedCol")}</th>
               <th>{t("requests.statusCol")}</th>
-              <th></th>
+              {isAdmin ? <th></th> : null}
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ padding: "32px 16px", textAlign: "center", color: "var(--color-muted)" }}>
+                <td colSpan={isAdmin ? 5 : 4} style={{ padding: "32px 16px", textAlign: "center", color: "var(--color-muted)" }}>
                   {t("requests.noRequests")}
                 </td>
               </tr>
@@ -122,11 +123,13 @@ export function EmployeeRequestsPage() {
                   <td>
                     <span className={`badge ${BADGE_TONE[r.status]}`}>{r.status}</span>
                   </td>
-                  <td>
-                    <button type="button" onClick={() => remove(r.id)} style={{ color: "var(--color-danger)", fontSize: "12px", fontWeight: "600" }}>
-                      {t("requests.remove")}
-                    </button>
-                  </td>
+                  {isAdmin ? (
+                    <td>
+                      <button type="button" onClick={() => remove(r.id)} style={{ color: "var(--color-danger)", fontSize: "12px", fontWeight: "600" }}>
+                        {t("requests.remove")}
+                      </button>
+                    </td>
+                  ) : null}
                 </tr>
               ))
             )}

@@ -970,13 +970,20 @@ def delete_agency_request(request_id: int, session: Session = Depends(get_sessio
 
 
 @app.get("/employee-requests")
-def list_employee_requests(session: Session = Depends(get_session)):
-    return session.exec(select(EmployeeRequest).order_by(EmployeeRequest.id.desc())).all()
+def list_employee_requests(user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+    # Private between each agent and the admin: an agent only ever sees their
+    # own requests, while the admin sees everyone's.
+    query = select(EmployeeRequest).order_by(EmployeeRequest.id.desc())
+    if user.role != "Admin":
+        query = query.where(EmployeeRequest.user_email == user.email)
+    return session.exec(query).all()
 
 
 @app.post("/employee-requests", status_code=201)
-def create_employee_request(data: EmployeeRequestCreate, session: Session = Depends(get_session)):
-    req = EmployeeRequest.model_validate(data)
+def create_employee_request(
+    data: EmployeeRequestCreate, user: User = Depends(get_current_user), session: Session = Depends(get_session)
+):
+    req = EmployeeRequest.model_validate(data, update={"user_email": user.email})
     session.add(req)
     session.commit()
     session.refresh(req)
@@ -984,7 +991,7 @@ def create_employee_request(data: EmployeeRequestCreate, session: Session = Depe
 
 
 @app.delete("/employee-requests/{request_id}")
-def delete_employee_request(request_id: int, session: Session = Depends(get_session)):
+def delete_employee_request(request_id: int, _: User = Depends(require_admin), session: Session = Depends(get_session)):
     req = session.get(EmployeeRequest, request_id)
     if not req:
         raise HTTPException(status_code=404, detail="Request not found")

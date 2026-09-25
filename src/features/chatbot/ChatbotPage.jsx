@@ -93,7 +93,7 @@ export function ChatbotPage() {
                   lineHeight: "1.5",
                   backgroundColor: m.role === "assistant" ? "var(--color-surface)" : "var(--color-ink)",
                   color: m.role === "assistant" ? "var(--color-ink)" : "var(--color-white)",
-                  marginLeft: m.role === "assistant" ? 0 : "auto",
+                  marginInlineStart: m.role === "assistant" ? 0 : "auto",
                   whiteSpace: "pre-wrap",
                 }}
               >
@@ -130,6 +130,12 @@ export function ChatbotPage() {
           <input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                send(e);
+              }
+            }}
             placeholder={t("chatbot.askPlaceholder")}
             className="input-box"
             style={{ flex: 1 }}

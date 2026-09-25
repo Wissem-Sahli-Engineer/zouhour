@@ -8,6 +8,7 @@ import { useI18n } from "../../store/i18n";
 
 export function ChatbotPanel() {
   const t = useI18n((s) => s.t);
+  const isRtl = useI18n((s) => s.isRtl);
   const open = useUi((s) => s.chatbotOpen);
   const setChatbot = useUi((s) => s.setChatbot);
   const panelRef = useRef(null);
@@ -22,14 +23,14 @@ export function ChatbotPanel() {
       if (!el) return;
       const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       gsap.to(el, {
-        x: open ? 0 : 420,
+        x: open ? 0 : isRtl ? -420 : 420,
         autoAlpha: open ? 1 : 0,
         duration: reduce ? 0 : DURATION,
         ease: EASE,
         pointerEvents: open ? "auto" : "none",
       });
     },
-    { dependencies: [open] }
+    { dependencies: [open, isRtl] }
   );
 
   const send = async (e) => {
@@ -75,12 +76,12 @@ export function ChatbotPanel() {
       style={{
         position: "fixed",
         bottom: "96px",
-        right: "24px",
+        insetInlineEnd: "24px",
         zIndex: 40,
         display: "flex",
         height: "min(560px, 70vh)",
         width: "380px",
-        transform: "translateX(420px)",
+        transform: `translateX(${isRtl ? -420 : 420}px)`,
         flexDirection: "column",
         overflow: "hidden",
         borderRadius: "var(--radius-card)",
@@ -153,7 +154,7 @@ export function ChatbotPanel() {
               lineHeight: "1.45",
               backgroundColor: m.role === "assistant" ? "var(--color-surface)" : "var(--color-ink)",
               color: m.role === "assistant" ? "var(--color-ink)" : "var(--color-white)",
-              marginLeft: m.role === "assistant" ? 0 : "auto",
+              marginInlineStart: m.role === "assistant" ? 0 : "auto",
               whiteSpace: "pre-wrap",
             }}
           >
@@ -188,6 +189,12 @@ export function ChatbotPanel() {
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              send(e);
+            }
+          }}
           placeholder={t("chatbot.askPlaceholder")}
           className="input-box"
           style={{ flex: 1 }}

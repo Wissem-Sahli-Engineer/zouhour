@@ -186,6 +186,10 @@ class EmployeeRequest(EmployeeRequestBase, table=True):
     __tablename__ = "employee_requests"
 
     id: int | None = Field(default=None, primary_key=True)
+    # Whoever submitted it — set from the authenticated session, never trusted
+    # from the client. Non-admins only ever see their own rows; this is what
+    # makes the request private between that agent and the admin.
+    user_email: str = Field(default="", max_length=200, index=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
