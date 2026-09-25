@@ -8,6 +8,23 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // TEMP debug instrumentation: surface any crash as visible text instead
+      // of a silent blank screen (WKWebView doesn't show JS errors on-screen).
+      // Safe to remove once native iOS builds are confirmed working.
+      function showCrash(msg) {
+        var el = document.createElement("pre");
+        el.style.cssText = "position:fixed;inset:0;z-index:99999;background:#fff;color:#c00;padding:16px;font-size:12px;white-space:pre-wrap;overflow:auto;margin:0;";
+        el.textContent = msg;
+        document.body.appendChild(el);
+      }
+      window.addEventListener("error", function (e) {
+        showCrash("window.onerror:\n" + (e.error && e.error.stack ? e.error.stack : e.message));
+      });
+      window.addEventListener("unhandledrejection", function (e) {
+        showCrash("unhandledrejection:\n" + (e.reason && e.reason.stack ? e.reason.stack : e.reason));
+      });
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

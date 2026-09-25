@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { apiUrl } from "../lib/apiBase";
 
 const SESSION_KEY = "zouhour-auth-session";
 const PERSIST_KEY = "zouhour-auth";
@@ -69,8 +70,9 @@ export const useAuth = create((set, get) => ({
 // those never go through fetch, so the Authorization header can't reach them.
 export function withToken(url) {
   if (!url) return url;
+  const target = apiUrl(url);
   const token = useAuth.getState().token;
-  if (!token) return url;
-  const sep = url.includes("?") ? "&" : "?";
-  return `${url}${sep}token=${encodeURIComponent(token)}`;
+  if (!token) return target;
+  const sep = target.includes("?") ? "&" : "?";
+  return `${target}${sep}token=${encodeURIComponent(token)}`;
 }
